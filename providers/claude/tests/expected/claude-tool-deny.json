@@ -1,0 +1,49 @@
+[
+  {
+    "ready": "00000000-0000-0000-0000-000000000001"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "I will run touch denied.txt."
+  },
+  {
+    "call": "toolu_deny_1",
+    "event": "tool_started",
+    "input": {
+      "command": "touch denied.txt"
+    },
+    "name": "Bash"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "touch denied.txt"
+    }
+  },
+  {
+    "call": "toolu_deny_1",
+    "chunk": "Denied by user",
+    "event": "tool_output"
+  },
+  {
+    "call": "toolu_deny_1",
+    "event": "tool_finished",
+    "ok": false,
+    "result": "Denied by user"
+  },
+  {
+    "event": "text_delta",
+    "text": "Understood, I did not run touch denied.txt."
+  },
+  {
+    "event": "text_done",
+    "text": "Understood, I did not run touch denied.txt."
+  },
+  {
+    "cost": 0.0000215,
+    "event": "usage",
+    "input_tokens": 65,
+    "output_tokens": 30
+  },
+  "turn_done"
+]

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "The claude table of a provider entry (kumikit.provider-claude)",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "command": { "type": "string", "minLength": 1, "description": "Program to start (default `claude`); must be in the declaring plugin's permissions.spawn." },
+    "args": { "type": "array", "items": { "type": "string" }, "description": "Extra arguments appended to Claude Code's command line." },
+    "env": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Plain environment variables (for example ANTHROPIC_BASE_URL)." },
+    "secret-env": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Variable name to secret name; each secret must be in permissions.secrets." },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "capabilities": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "model-arg": { "type": "string", "description": "Flag that selects the model on the command line (default `--model`)." },
+    "permission-mode": { "type": "string", "description": "Claude Code --permission-mode value (default `manual`)." }
+  }
+}

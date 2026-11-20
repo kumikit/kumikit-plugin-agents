@@ -8,7 +8,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   # The kumikit/kumikit commit the SDK dependencies pin (scripts/pin.sh moves both).
-  KUMIKIT_REV: b225f3bb85a5babff42194673aed626f6f52c24b
+  KUMIKIT_REV: c09e83d596c1eebbed7e574187f7fcd608e51efa
 
 jobs:
   check:
@@ -27,10 +27,17 @@ jobs:
           workspaces: |
             .
             _kumikit
-      - name: Format and clippy
-        run: cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings
-      - name: Replay tests
-        run: cargo test -p kumikit-agents-harness
+      - name: Format and clippy (native and wasm32-wasip2)
+        run: |
+          cargo fmt --check
+          cargo clippy --workspace --all-targets -- -D warnings
+          cargo clippy --target wasm32-wasip2 -p kumikit-provider-claude -- -D warnings
+      - name: Unit and replay tests
+        run: |
+          cargo test -p kumikit-agents-harness
+          cargo test -p kumikit-provider-claude
+      - name: Build WASM provider plugins
+        run: cargo build --target wasm32-wasip2 --release -p kumikit-provider-claude
       - name: Build the pinned core, fake agent and provider-acp
         working-directory: _kumikit
         run: cargo build -p kumikit-core -p kumikit-test-plugins

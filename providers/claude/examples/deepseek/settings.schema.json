@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DeepSeek settings",
+  "type": "object",
+  "properties": {
+    "apiKey": {
+      "type": "string",
+      "title": "DeepSeek API key",
+      "description": "Stored in Kumikit's secret store and passed to Claude Code as ANTHROPIC_AUTH_TOKEN.",
+      "x-secret": "deepseek-api-key"
+    }
+  }
+}

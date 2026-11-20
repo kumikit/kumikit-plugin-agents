@@ -1,0 +1,49 @@
+[
+  {
+    "ready": "00000000-0000-0000-0000-000000000001"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "I will create hello.txt."
+  },
+  {
+    "call": "toolu_allow_1",
+    "event": "tool_started",
+    "input": {
+      "command": "printf hi > hello.txt"
+    },
+    "name": "Bash"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "printf hi > hello.txt"
+    }
+  },
+  {
+    "call": "toolu_allow_1",
+    "chunk": "(Bash completed with no output)",
+    "event": "tool_output"
+  },
+  {
+    "call": "toolu_allow_1",
+    "event": "tool_finished",
+    "ok": true,
+    "result": "(Bash completed with no output)"
+  },
+  {
+    "event": "text_delta",
+    "text": "Created hello.txt containing hi."
+  },
+  {
+    "event": "text_done",
+    "text": "Created hello.txt containing hi."
+  },
+  {
+    "cost": 0.000020500000000000004,
+    "event": "usage",
+    "input_tokens": 65,
+    "output_tokens": 28
+  },
+  "turn_done"
+]

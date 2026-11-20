@@ -1,0 +1,49 @@
+[
+  {
+    "ready": "00000000-0000-0000-0000-000000000001"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "Calling the kumikit echo tool."
+  },
+  {
+    "call": "toolu_mcp_1",
+    "event": "tool_started",
+    "input": {
+      "text": "ping"
+    },
+    "name": "mcp__kumikit__test_tool__echo"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "Echo"
+    }
+  },
+  {
+    "call": "toolu_mcp_1",
+    "chunk": "{\"echo\":\"ping\",\"thread\":\"01M7XCD72XMGCG2QMRFTZNG7NR\"}",
+    "event": "tool_output"
+  },
+  {
+    "call": "toolu_mcp_1",
+    "event": "tool_finished",
+    "ok": true,
+    "result": "{\"echo\":\"ping\",\"thread\":\"01M7XCD72XMGCG2QMRFTZNG7NR\"}"
+  },
+  {
+    "event": "text_delta",
+    "text": "The kumikit echo tool answered: ping."
+  },
+  {
+    "event": "text_done",
+    "text": "The kumikit echo tool answered: ping."
+  },
+  {
+    "cost": 0.000023000000000000003,
+    "event": "usage",
+    "input_tokens": 80,
+    "output_tokens": 30
+  },
+  "turn_done"
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "ready": "00000000-0000-0000-0000-000000000001"
+  },
+  {
+    "event": "text_delta",
+    "text": "hello from kumikit"
+  },
+  {
+    "event": "text_done",
+    "text": "hello from kumikit"
+  },
+  {
+    "cost": 3.7e-6,
+    "event": "usage",
+    "input_tokens": 12,
+    "output_tokens": 5
+  },
+  "turn_done"
+]

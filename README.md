@@ -16,16 +16,27 @@ Manifests with no code, run by Kumikit's preinstalled `kumikit.provider-acp`:
 Each uses the CLI's own sign-in and model settings. Each directory's README says how to
 install and sign in.
 
+## WASM provider adapters
+
+| Plugin | Agent | Protocol |
+|---|---|---|
+| `kumikit.provider-claude` | Claude Code | Native `stream-json` stdio (`--permission-prompt-tool stdio`, `--mcp-config`); also serves the `claude` backend |
+
+`providers/claude/examples/deepseek` is a community example using the `claude` backend to
+run Claude Code against DeepSeek's Anthropic-compatible API.
+
 ## Tests
 
-Recorded transcripts of each real agent replay through provider-acp's ACP translation:
+Unit and replay tests:
 
 ```sh
 cargo test -p kumikit-agents-harness       # KUMIKIT_BLESS=1 rewrites tests/expected
+cargo test -p kumikit-provider-claude
 ```
 
-End to end, against a kumikit checkout at the pinned commit, built with
-`cargo build -p kumikit-core -p kumikit-test-plugins`:
+End to end, against a kumikit checkout at the pinned commit (`cargo build -p kumikit-core
+-p kumikit-test-plugins`) and the built WASM adapter (`cargo build --target wasm32-wasip2
+--release -p kumikit-provider-claude`):
 
 ```sh
 KUMIKIT_DIR=../kumikit cargo test -p kumikit-agents-e2e
@@ -40,14 +51,18 @@ KUMIKIT_DIR=../kumikit cargo test -p kumikit-agents-e2e -- --ignored
 
 ## Recording
 
+ACP providers:
+
 ```sh
 KUMIKIT_DIR=../kumikit sh scripts/record.sh <provider> [scenario…]
 ```
 
-`RECORD_EXTRA_ARGS` (a JSON array) and `RECORD_EXTRA_ENV` (a JSON object) add arguments or
-variables for the recorded agent only, for example to pick a model a free plan has. The
-scrubber removes session ids, paths, the user name and the gateway token, and refuses a
-file that still has a personal detail in it.
+Claude Code `stream-json` (drives the real `claude` binary against a loopback Anthropic
+Messages API server):
+
+```sh
+KUMIKIT_DIR=../kumikit node scripts/record-claude.mjs
+```
 
 ## Pin
 

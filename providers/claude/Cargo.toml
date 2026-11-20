@@ -1,0 +1,20 @@
+[package]
+name = "kumikit-provider-claude"
+description = "Claude Code provider plugin for Kumikit over Claude Code's stream-json stdio protocol"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+kumikit-provider.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,22 @@
+# Claude Code WASM adapter and `claude` provider backend (`docs/spec/05-providers.md`).
+id = "kumikit.provider-claude"
+name = "Claude Code"
+version = "0.1.0"
+description = "Claude Code over its native stream-json stdio protocol, and the `claude` backend for Anthropic-compatible endpoints."
+license = "MIT"
+repository = "https://github.com/kumikit/kumikit-plugin-agents"
+kind = ["provider"]
+api = "^0.2"
+
+[runtime]
+wasm = "plugin.wasm"
+worlds = ["kumikit:provider/plugin@0.2.0"]
+
+[permissions]
+spawn = ["claude"]
+# Hands Claude Code the tools of your other plugins, through Kumikit's tool gateway.
+tools = true
+
+[contributes]
+providers = [{ id = "claude", name = "Claude Code" }]
+provider-backends = [{ key = "claude", schema = "claude.schema.json" }]

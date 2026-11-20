@@ -512,3 +512,218 @@ fn live_cursor() {
 fn live_opencode() {
     live("opencode");
 }
+
+fn claude_recorded_decisions(transcript: &Path) -> Vec<&'static str> {
+    let mut out = Vec::new();
+    for line in std::fs::read_to_string(transcript)
+        .unwrap()
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+    {
+        let e: Value = serde_json::from_str(line).unwrap();
+        let m = &e["message"];
+        if e["from"] == "client" && m["type"] == "control_response" {
+            let resp = &m["response"]["response"];
+            out.push(match resp["behavior"].as_str() {
+                Some("allow") if resp.get("updatedPermissions").is_some() => "allow_always",
+                Some("allow") => "allow",
+                _ => "deny",
+            });
+        }
+    }
+    out
+}
+
+#[test]
+fn claude_provider_and_deepseek_example_run_end_to_end() {
+    let bins = Bins::locate();
+    let root = repo_root();
+    let claude_dir = root.join("providers/claude");
+    let claude_wasm = root.join("target/wasm32-wasip2/release/kumikit_provider_claude.wasm");
+    assert!(
+        claude_wasm.is_file(),
+        "{} is missing: run `cargo build --target wasm32-wasip2 --release -p kumikit-provider-claude`",
+        claude_wasm.display()
+    );
+
+    let mut core = Core::start(&bins, bins.fake_agent.parent());
+    let ws = core.open_workspace();
+
+    // 1. Pack, install and enable kumikit.provider-claude.
+    let claude_manifest = claude_dir.join("plugin.toml");
+    let claude_schema = claude_dir.join("claude.schema.json");
+    let claude_readme = claude_dir.join("README.md");
+    let installed = core.install_files(
+        &bins,
+        "provider-claude",
+        &[
+            ("plugin.toml", &claude_manifest),
+            ("claude.schema.json", &claude_schema),
+            ("README.md", &claude_readme),
+            ("plugin.wasm", &claude_wasm),
+        ],
+    );
+    assert_eq!(installed["id"], "kumikit.provider-claude");
+    assert!(
+        installed["contributes"]["providers"]
+            .as_array()
+            .is_some_and(|a| !a.is_empty()),
+        "provider-claude registered no direct provider: {installed}"
+    );
+
+    // 2. Pack, install and enable the DeepSeek community example (delegated `claude` backend).
+    let ds_dir = claude_dir.join("examples/deepseek");
+    let ds_manifest = ds_dir.join("plugin.toml");
+    let ds_settings = ds_dir.join("settings.schema.json");
+    let ds_readme = ds_dir.join("README.md");
+    let ds = core.install_files(
+        &bins,
+        "provider-deepseek",
+        &[
+            ("plugin.toml", &ds_manifest),
+            ("settings.schema.json", &ds_settings),
+            ("README.md", &ds_readme),
+        ],
+    );
+    assert_eq!(ds["id"], "community.provider-deepseek");
+    assert_eq!(ds["contributes"]["settings"], true);
+    let plist = core.call("provider.list", json!({}));
+    assert!(
+        plist["providers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|p| p["id"] == "community.provider-deepseek/deepseek"),
+        "deepseek not in provider.list: {plist}"
+    );
+    let ds_models = core.call(
+        "provider.models",
+        json!({ "provider": "community.provider-deepseek/deepseek" }),
+    );
+    assert!(
+        ds_models["models"]
+            .as_array()
+            .is_some_and(|m| m.iter().any(|x| x["id"] == "deepseek-chat")),
+        "deepseek models missing: {ds_models}"
+    );
+    let schema = core.call(
+        "settings.schema",
+        json!({ "plugin": "community.provider-deepseek" }),
+    );
+    assert_eq!(
+        schema["schema"]["properties"]["apiKey"]["x-secret"],
+        "deepseek-api-key"
+    );
+
+    // 3. Replay every recorded Claude Code stream-json transcript end-to-end through the
+    //    `claude` backend and `fake-acp-agent replay`.
+    let tdir = claude_dir.join("tests/transcripts");
+    let mut files: Vec<PathBuf> = std::fs::read_dir(&tdir)
+        .unwrap()
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "jsonl"))
+        .collect();
+    files.sort();
+    assert!(!files.is_empty());
+
+    let mut entries = Vec::new();
+    for path in &files {
+        let stem = path.file_stem().unwrap().to_string_lossy().into_owned();
+        let file = std::fs::canonicalize(path)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "\\\\");
+        entries.push(format!(
+            "  {{ id = \"{stem}\", name = \"{stem}\", claude = {{ command = \"fake-acp-agent\", args = [\"replay\", \"{file}\"] }} }},"
+        ));
+    }
+    let replay_manifest = core.tmp.path().join("claude-replay.toml");
+    std::fs::write(
+        &replay_manifest,
+        format!(
+            "id = \"test.replay-claude\"\nname = \"Replay Claude\"\nversion = \"0.1.0\"\nkind = [\"provider\"]\napi = \"^0.2\"\n\
+             [permissions]\nspawn = [\"fake-acp-agent\"]\ntools = true\n[contributes]\nproviders = [\n{}\n]\n",
+            entries.join("\n")
+        ),
+    )
+    .unwrap();
+    core.install_files(&bins, "replay-claude", &[("plugin.toml", &replay_manifest)]);
+
+    for path in &files {
+        let stem = path.file_stem().unwrap().to_string_lossy().into_owned();
+        let expected = claude_dir
+            .join("tests/expected")
+            .join(format!("{stem}.json"));
+        let mut answers = claude_recorded_decisions(path).into_iter();
+        let topic = core.send(&ws, &format!("test.replay-claude/{stem}"), "replay");
+        let deadline = Instant::now() + DEADLINE;
+        let mut kinds = Vec::new();
+        loop {
+            let e = core.event(&topic, deadline);
+            let kind = e["kind"].as_str().unwrap().to_owned();
+            if kind == "approval.requested" {
+                let answer = answers
+                    .next()
+                    .unwrap_or_else(|| panic!("{stem}: unexpected approval"));
+                let approval = e["data"]["approval"]["id"].clone();
+                core.call(
+                    "thread.respondApproval",
+                    json!({ "approval": approval, "decision": answer }),
+                );
+            }
+            kinds.push(kind.clone());
+            if kind == "turn.ended" {
+                assert_eq!(e["data"]["outcome"], "done", "{stem}: {e}");
+                break;
+            }
+        }
+        assert_eq!(kinds, expected_kinds(&expected), "{stem}");
+    }
+}
+
+#[test]
+#[ignore = "live: needs Claude Code (`claude`) and its sign-in"]
+fn live_claude() {
+    let bins = Bins::locate();
+    let root = repo_root();
+    let claude_dir = root.join("providers/claude");
+    let claude_wasm = root.join("target/wasm32-wasip2/release/kumikit_provider_claude.wasm");
+    let mut core = Core::start(&bins, None);
+    let claude_manifest = claude_dir.join("plugin.toml");
+    let claude_schema = claude_dir.join("claude.schema.json");
+    let claude_readme = claude_dir.join("README.md");
+    core.install_files(
+        &bins,
+        "provider-claude",
+        &[
+            ("plugin.toml", &claude_manifest),
+            ("claude.schema.json", &claude_schema),
+            ("README.md", &claude_readme),
+            ("plugin.wasm", &claude_wasm),
+        ],
+    );
+    let ws = core.open_workspace();
+    let topic = core.send(
+        &ws,
+        "kumikit.provider-claude/claude",
+        "Reply with exactly the words: hello from kumikit. Do not use any tools.",
+    );
+    let deadline = Instant::now() + Duration::from_secs(180);
+    let mut text = String::new();
+    loop {
+        let e = core.event(&topic, deadline);
+        match e["kind"].as_str() {
+            Some("text.done") => text = e["data"]["text"].as_str().unwrap_or_default().to_owned(),
+            Some("turn.ended") => {
+                assert_eq!(e["data"]["outcome"], "done", "{e}");
+                break;
+            }
+            _ => {}
+        }
+    }
+    assert!(
+        text.to_lowercase().contains("hello from kumikit"),
+        "claude said {text:?}"
+    );
+}

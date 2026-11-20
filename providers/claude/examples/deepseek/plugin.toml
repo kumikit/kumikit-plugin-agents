@@ -1,0 +1,21 @@
+# Community example: DeepSeek through Claude Code's Anthropic-compatible API and the
+# `claude` provider backend (`kumikit.provider-claude`), with no code.
+id = "community.provider-deepseek"
+name = "DeepSeek (via Claude Code)"
+version = "0.1.0"
+description = "Runs Claude Code against DeepSeek's Anthropic-compatible API endpoint."
+license = "MIT"
+repository = "https://github.com/kumikit/kumikit-plugin-agents"
+kind = ["provider"]
+api = "^0.2"
+
+[permissions]
+spawn = ["claude"]
+secrets = ["deepseek-api-key"]
+tools = true
+
+[contributes]
+settings = "settings.schema.json"
+providers = [
+  { id = "deepseek", name = "DeepSeek", claude = { env = { ANTHROPIC_BASE_URL = "https://api.deepseek.com/anthropic", ANTHROPIC_MODEL = "deepseek-chat", API_TIMEOUT_MS = "600000", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1" }, secret-env = { ANTHROPIC_AUTH_TOKEN = "deepseek-api-key" }, models = [{ id = "deepseek-chat", label = "DeepSeek Chat", capabilities = ["tools", "approvals", "resume"] }, { id = "deepseek-reasoner", label = "DeepSeek Reasoner", capabilities = ["tools", "approvals", "reasoning", "resume"] }] } }
+]

@@ -40,6 +40,9 @@ pub fn providers(root: &Path) -> Result<Vec<Provider>, String> {
         let text = std::fs::read_to_string(d.join("plugin.toml")).map_err(|e| e.to_string())?;
         let manifest: toml::Value =
             toml::from_str(&text).map_err(|e| format!("{}: {e}", d.display()))?;
+        if manifest.get("runtime").is_some() {
+            continue;
+        }
         let acp = manifest
             .get("contributes")
             .and_then(|c| c.get("providers"))
