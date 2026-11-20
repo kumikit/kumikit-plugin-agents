@@ -1,0 +1,229 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " user"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " wants"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " me"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " to"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " create"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " a file"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " named"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " hello.tx"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "t containi"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "ng the"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " single"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " word"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " \"hi\".\n\nI should ask for permission"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " first."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "\n\nI'm weighing whether"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " this simple file creation"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " actually requires permission."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "\n\nThe explicit request"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " itself serves as permission."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I'll create the file"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " now."
+  },
+  {
+    "event": "text_delta",
+    "text": "Creating"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "hello"
+  },
+  {
+    "event": "text_delta",
+    "text": ".txt"
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_delta",
+    "text": " now"
+  },
+  {
+    "event": "text_delta",
+    "text": " —"
+  },
+  {
+    "event": "text_delta",
+    "text": " no"
+  },
+  {
+    "event": "text_delta",
+    "text": " extra"
+  },
+  {
+    "event": "text_delta",
+    "text": " permission"
+  },
+  {
+    "event": "text_delta",
+    "text": " needed"
+  },
+  {
+    "event": "text_delta",
+    "text": " beyond"
+  },
+  {
+    "event": "text_delta",
+    "text": " your"
+  },
+  {
+    "event": "text_delta",
+    "text": " request"
+  },
+  {
+    "event": "text_delta",
+    "text": "."
+  },
+  {
+    "call": "call-1a4ece2e-2c1c-43c0-9ef0-ffa5dfaafa21-0\nfc_2d275bcc-77fa-9b0a-b774-c6df9770b03a_0",
+    "event": "tool_started",
+    "input": {
+      "path": "/workspace/hello.txt"
+    },
+    "name": "Edit `/workspace/hello.txt`"
+  },
+  {
+    "diff": "--- a/hello.txt\n+++ b/hello.txt\n@@ -1,1 +1,2 @@\n--- /dev/null\n+++ b//workspace/hello.txt\n+hi\n",
+    "event": "file_changed",
+    "path": "hello.txt"
+  },
+  {
+    "call": "call-1a4ece2e-2c1c-43c0-9ef0-ffa5dfaafa21-0\nfc_2d275bcc-77fa-9b0a-b774-c6df9770b03a_0",
+    "event": "tool_finished",
+    "ok": true,
+    "result": null
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " file was created successfully."
+  },
+  {
+    "event": "text_delta",
+    "text": "Created"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "hello"
+  },
+  {
+    "event": "text_delta",
+    "text": ".txt"
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_delta",
+    "text": " with"
+  },
+  {
+    "event": "text_delta",
+    "text": " the"
+  },
+  {
+    "event": "text_delta",
+    "text": " word"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "hi"
+  },
+  {
+    "event": "text_delta",
+    "text": "`."
+  },
+  {
+    "event": "text_done",
+    "text": "Creating `hello.txt` now — no extra permission needed beyond your request.Created `hello.txt` with the word `hi`."
+  },
+  "turn_done"
+]

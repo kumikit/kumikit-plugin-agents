@@ -1,0 +1,172 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The user wants me to call the MCP tool test_tool__"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "echo from the k"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "umikit server with the text \"ping\", then tell them exactly what it answered.\n\nAccording to the Code Mode section of"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " the system prompt, the tools `tools.kumik"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "it.test_tool__echo` etc. \"c"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "annot be called directly: they only work as JavaScript inside the"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " `execute` tool.\" So I need to use"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " the `execute` tool and call"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " `tools."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "kumikit.test_tool__echo({ text:"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " \"ping\" })`.\n\nWait, but there's also a `list_mcp_resources` tool for discovering resources. But this is calling"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " an actual tool, not a resource. The Code Mode catalog says the tools are available inside `execute`. Let me call"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " it.\n\nLet me use execute to call the tool."
+  },
+  {
+    "event": "text_delta",
+    "text": "I'll call that tool for you now."
+  },
+  {
+    "call": "call_9203774ddce940f298505fdb",
+    "event": "tool_started",
+    "input": {
+      "code": "const result = await tools.kumikit.test_tool__echo({ text: \"ping\" });\nreturn result;"
+    },
+    "name": "execute"
+  },
+  {
+    "call": "call_9203774ddce940f298505fdb",
+    "chunk": "{\"echo\":\"ping\",\"thread\":\"01M7XABT14M61J3Q21R8WWQGNB\"}",
+    "event": "tool_output"
+  },
+  {
+    "call": "call_9203774ddce940f298505fdb",
+    "event": "tool_finished",
+    "ok": true,
+    "result": {
+      "metadata": {
+        "toolCalls": [
+          {
+            "input": {
+              "text": "ping"
+            },
+            "status": "completed",
+            "tool": "kumikit.test_tool__echo"
+          }
+        ],
+        "truncated": false
+      }
+    }
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The tool returned a JSON object: `{\"echo\":\"ping\",\"thread"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "\":\"01M7XABT14M61J"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "3Q21R8WWQGNB\"}`.\n"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "\nSo the answer to the user: the tool answered with"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " an echo of \"ping\" plus a thread ID \"01"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "M7XABT14M61J3Q21"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "R8WWQGNB\". I should tell them"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " exactly what it answered — the echoed text \""
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "ping\" and the thread identifier.\n\nI should be"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " concise and report exactly what the tool returned."
+  },
+  {
+    "event": "text_delta",
+    "text": "The tool answered with:\n\n```json\n{\""
+  },
+  {
+    "event": "text_delta",
+    "text": "echo\":\"ping\",\"thread\":\"01M7XABT"
+  },
+  {
+    "event": "text_delta",
+    "text": "14M61J3Q21R8WWQGN"
+  },
+  {
+    "event": "text_delta",
+    "text": "B\"}\n```\n\nSo it echoed back the"
+  },
+  {
+    "event": "text_delta",
+    "text": " text \"ping\" and included a thread ID of `"
+  },
+  {
+    "event": "text_delta",
+    "text": "01M"
+  },
+  {
+    "event": "text_delta",
+    "text": "7XABT14M61J3Q21R8WWQGNB`."
+  },
+  {
+    "event": "text_done",
+    "text": "I'll call that tool for you now.The tool answered with:\n\n```json\n{\"echo\":\"ping\",\"thread\":\"01M7XABT14M61J3Q21R8WWQGNB\"}\n```\n\nSo it echoed back the text \"ping\" and included a thread ID of `01M7XABT14M61J3Q21R8WWQGNB`."
+  },
+  {
+    "cost": 0.0,
+    "event": "usage",
+    "input_tokens": 91,
+    "output_tokens": 125
+  },
+  "turn_done"
+]

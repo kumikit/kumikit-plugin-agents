@@ -1,0 +1,189 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " user"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " wants"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " me"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " to"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " call"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " an"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " MCP"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " tool"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " `test_to"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "ol__echo` from the `kumikit` server with the text \"ping\", then tell them exactly what it answered.\n\nI'll start by discovering the tool schema using GetDynamicTools."
+  },
+  {
+    "event": "text_delta",
+    "text": "I'll"
+  },
+  {
+    "event": "text_delta",
+    "text": " inspect"
+  },
+  {
+    "event": "text_delta",
+    "text": " the"
+  },
+  {
+    "event": "text_delta",
+    "text": " kum"
+  },
+  {
+    "event": "text_delta",
+    "text": "ikit"
+  },
+  {
+    "event": "text_delta",
+    "text": " echo"
+  },
+  {
+    "event": "text_delta",
+    "text": " tool"
+  },
+  {
+    "event": "text_delta",
+    "text": " schema"
+  },
+  {
+    "event": "text_delta",
+    "text": ","
+  },
+  {
+    "event": "text_delta",
+    "text": " then"
+  },
+  {
+    "event": "text_delta",
+    "text": " call"
+  },
+  {
+    "event": "text_delta",
+    "text": " it"
+  },
+  {
+    "event": "text_delta",
+    "text": " with"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "ping"
+  },
+  {
+    "event": "text_delta",
+    "text": "`."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "Now"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I know"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " the schema - it takes a `text` parameter.\n\nCalling the tool with \"ping\"."
+  },
+  {
+    "call": "call-7513caa3-dc32-4de8-a78d-a5a2123ed3eb-1\nfc_549a3796-230b-967a-8b30-5dc98a2603b1_0",
+    "event": "tool_started",
+    "input": {
+      "args": {
+        "text": "ping"
+      },
+      "providerIdentifier": "kumikit",
+      "toolName": "test_tool__echo"
+    },
+    "name": "kumikit: test_tool__echo"
+  },
+  {
+    "call": "call-7513caa3-dc32-4de8-a78d-a5a2123ed3eb-1\nfc_549a3796-230b-967a-8b30-5dc98a2603b1_0",
+    "chunk": "```json\n{\n  \"text\": \"ping\"\n}\n```",
+    "event": "tool_output"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "kumikit-test_tool__echo: test_tool__echo"
+    }
+  },
+  {
+    "call": "call-7513caa3-dc32-4de8-a78d-a5a2123ed3eb-1\nfc_549a3796-230b-967a-8b30-5dc98a2603b1_0",
+    "event": "tool_finished",
+    "ok": true,
+    "result": {
+      "success": true
+    }
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " tool"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " answered"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " with exactly \"ping\"."
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_delta",
+    "text": "ping"
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_done",
+    "text": "I'll inspect the kumikit echo tool schema, then call it with `ping`.`ping`"
+  },
+  "turn_done"
+]

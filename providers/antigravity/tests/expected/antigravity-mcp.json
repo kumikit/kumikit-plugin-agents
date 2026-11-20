@@ -1,0 +1,45 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The `mcp_kumikit_test_tool__echo` tool appears directly accessible. Attempting to execute it with the input \"ping\" to fulfill the request.\n\n\n"
+  },
+  {
+    "call": "call_13097643097396726348",
+    "event": "tool_started",
+    "input": {
+      "text": "ping",
+      "toolSummary": "Echo ping via kumikit MCP"
+    },
+    "name": "Run mcp_kumikit_test_tool__echo"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "Run mcp_kumikit_test_tool__echo"
+    }
+  },
+  {
+    "call": "call_13097643097396726348",
+    "event": "tool_finished",
+    "ok": true,
+    "result": null
+  },
+  {
+    "event": "text_delta",
+    "text": "The `test_tool__echo` tool answered:\n\n```\nping\n```"
+  },
+  {
+    "event": "text_done",
+    "text": "The `test_tool__echo` tool answered:\n\n```\nping\n```"
+  },
+  {
+    "cost": null,
+    "event": "usage",
+    "input_tokens": 12323,
+    "output_tokens": 155
+  },
+  "turn_done"
+]

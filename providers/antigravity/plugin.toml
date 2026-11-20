@@ -1,0 +1,17 @@
+# A declarative ACP provider: Antigravity CLI through kumikit.provider-acp, with no code.
+id = "kumikit.provider-antigravity"
+name = "Antigravity"
+version = "0.1.0"
+description = "Google Antigravity CLI as a Kumikit provider, over its Agent Client Protocol mode."
+license = "MIT"
+repository = "https://github.com/kumikit/kumikit-plugin-agents"
+kind = ["provider"]
+api = "^0.2"
+
+[permissions]
+spawn = ["agy"]
+# Hands the agent the tools of your other plugins, through Kumikit's tool gateway.
+tools = true
+
+[contributes]
+providers = [{ id = "antigravity", name = "Antigravity", acp = { command = "agy", args = ["acp"] } }]

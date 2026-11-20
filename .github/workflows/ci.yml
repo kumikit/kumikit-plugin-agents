@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  # The kumikit/kumikit commit the SDK dependencies pin (scripts/pin.sh moves both).
+  KUMIKIT_REV: b225f3bb85a5babff42194673aed626f6f52c24b
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: kumikit/kumikit
+          ref: ${{ env.KUMIKIT_REV }}
+          path: _kumikit
+      # rustup reads the pinned toolchain (and the wasm32-wasip2 target) from the checkouts.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            _kumikit
+      - name: Format and clippy
+        run: cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings
+      - name: Replay tests
+        run: cargo test -p kumikit-agents-harness
+      - name: Build the pinned core, fake agent and provider-acp
+        working-directory: _kumikit
+        run: cargo build -p kumikit-core -p kumikit-test-plugins
+      - name: End-to-end tests
+        env:
+          KUMIKIT_DIR: ${{ github.workspace }}/_kumikit
+        run: cargo test -p kumikit-agents-e2e

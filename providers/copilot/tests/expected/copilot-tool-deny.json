@@ -1,0 +1,44 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "call": "call_FWA3xuORXX52ecgmbZ0tA3NG",
+    "event": "tool_started",
+    "input": {
+      "command": "touch denied.txt",
+      "description": "Create denied.txt in the project"
+    },
+    "name": "Create denied.txt in the project"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "touch denied.txt"
+    }
+  },
+  {
+    "call": "call_FWA3xuORXX52ecgmbZ0tA3NG",
+    "event": "tool_finished",
+    "ok": false,
+    "result": {
+      "code": "rejected",
+      "message": "The user rejected this tool call."
+    }
+  },
+  {
+    "event": "text_delta",
+    "text": "Info: Operation cancelled by user"
+  },
+  {
+    "event": "text_done",
+    "text": "Info: Operation cancelled by user"
+  },
+  {
+    "cost": null,
+    "event": "usage",
+    "input_tokens": 17059,
+    "output_tokens": 41
+  },
+  "turn_done"
+]

@@ -1,0 +1,6 @@
+[
+  { "id": "text", "prompt": "Reply with exactly the words: hello from kumikit. Do not use any tools.", "answer": "allow" },
+  { "id": "tool-allow", "prompt": "Create a file named hello.txt containing the single word hi. Ask me first if you need permission.", "answer": "allow" },
+  { "id": "tool-deny", "prompt": "Run the shell command `touch denied.txt` in this project.", "answer": "deny" },
+  { "id": "mcp", "prompt": "Call the MCP tool test_tool__echo from the kumikit server with the text ping, then tell me exactly what it answered.", "answer": "allow" }
+]

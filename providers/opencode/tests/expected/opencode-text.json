@@ -1,0 +1,108 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The user wants me to reply with exactly the words:"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " \"hello from kumikit. Do not use any tools.\"\n\nThe"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " instruction says \"Do not use any tools.\" So"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I should just reply with that text. The reply should be exactly the words: `hello from"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " kumikit.`\n\nNote the system says"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " to prefer the kumikit tool `test_tool"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "__echo`, but the user explicitly said do not use any"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " tools. So I just reply.\n\nAlso, there"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "'s a note in the"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " user prompt about \"hello from kumikit\" — it"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " might be a test to see if I use the echo tool"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": ". The user said don't use tools, so I comply"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": ".\n\nOne consideration: should I reply with exactly \""
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "hello from kumikit\" or include the \"Do"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " not use any tools\" part? The user said: \""
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "Reply with exactly the words: hello from kumikit"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": ". Do not use any tools.\" So the reply should be"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " exactly the words \"hello from kumikit\". The"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " \"Do not use any tools\" is an instruction, not"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " part of what to reply.\n\nSo I'll respond"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " with: hello from kumikit\n\nKeep"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " it simple and exact."
+  },
+  {
+    "event": "text_delta",
+    "text": "hello from kumikit"
+  },
+  {
+    "event": "text_done",
+    "text": "hello from kumikit"
+  },
+  {
+    "cost": 0.0,
+    "event": "usage",
+    "input_tokens": 13909,
+    "output_tokens": 7
+  },
+  "turn_done"
+]

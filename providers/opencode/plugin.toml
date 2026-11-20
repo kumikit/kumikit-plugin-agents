@@ -1,0 +1,17 @@
+# A declarative ACP provider: OpenCode through kumikit.provider-acp, with no code.
+id = "kumikit.provider-opencode"
+name = "OpenCode"
+version = "0.1.0"
+description = "OpenCode as a Kumikit provider, over its Agent Client Protocol mode."
+license = "MIT"
+repository = "https://github.com/kumikit/kumikit-plugin-agents"
+kind = ["provider"]
+api = "^0.2"
+
+[permissions]
+spawn = ["opencode"]
+# Hands the agent the tools of your other plugins, through Kumikit's tool gateway.
+tools = true
+
+[contributes]
+providers = [{ id = "opencode", name = "OpenCode", acp = { command = "opencode", args = ["acp"] } }]

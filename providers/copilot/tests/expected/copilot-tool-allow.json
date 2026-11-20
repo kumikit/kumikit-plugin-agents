@@ -1,0 +1,381 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "**Considering file writing permissions**\n\nI'm"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " thinking"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " about"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " whether"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " can"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " write"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " to"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " a"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " file"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " without"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " needing"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " permission"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " It"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " sounds"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " like"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " should"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " ask"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " first"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " if"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " it's"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " required"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": ","
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " but"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " since"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " it's"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " been"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " explicitly"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " requested"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " and"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " know"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " the"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " workspace"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " is"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " okay"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": ","
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " can"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " proceed"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "’ll"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " consider"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " using"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " bash"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " commands"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " like"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " printf"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " or"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " apply"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "_patch"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " to"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " execute"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " this"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "."
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " It"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " seems"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " straightforward"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": ","
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " but"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I'll"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " double"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "-check"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " that"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " everything"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " is"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " clear"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " before"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " I"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " follow"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " through"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "!"
+  },
+  {
+    "call": "custom_call_6WKwwtAtKlAnKaZP3RPbcrPp",
+    "event": "tool_started",
+    "input": {
+      "diff": "\ndiff --git a/workspace/hello.txt b/workspace/hello.txt\ncreate file mode 100644\nindex 0000000..0000000\n--- a/dev/null\n+++ b/workspace/hello.txt\ncopilot:whole-file-v1\n@@ -1,0 +1,1 @@\n+hi\n\n",
+      "fileName": "/workspace/hello.txt"
+    },
+    "name": "Create file"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "Create file"
+    }
+  },
+  {
+    "diff": "--- a/hello.txt\n+++ b/hello.txt\n@@ -0,0 +1,1 @@\n+hi\n",
+    "event": "file_changed",
+    "path": "hello.txt"
+  },
+  {
+    "call": "custom_call_6WKwwtAtKlAnKaZP3RPbcrPp",
+    "event": "tool_finished",
+    "ok": true,
+    "result": {
+      "content": "Added 1 file(s): /workspace/hello.txt",
+      "detailedContent": "\ndiff --git a/workspace/hello.txt b/workspace/hello.txt\ncreate file mode 100644\nindex 0000000..0000000\n--- a/dev/null\n+++ b/workspace/hello.txt\ncopilot:whole-file-v1\n@@ -1,0 +1,1 @@\n+hi\n\n"
+    }
+  },
+  {
+    "event": "text_delta",
+    "text": "Created"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "hello"
+  },
+  {
+    "event": "text_delta",
+    "text": ".txt"
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_delta",
+    "text": " containing"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "hi"
+  },
+  {
+    "event": "text_delta",
+    "text": "`."
+  },
+  {
+    "event": "text_done",
+    "text": "Created `hello.txt` containing `hi`."
+  },
+  {
+    "cost": null,
+    "event": "usage",
+    "input_tokens": 34242,
+    "output_tokens": 81
+  },
+  "turn_done"
+]

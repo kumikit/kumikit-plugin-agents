@@ -1,0 +1,34 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": "The"
+  },
+  {
+    "event": "reasoning_delta",
+    "text": " user wants me to reply with exactly the words \"hello from kumikit\" and not use any tools."
+  },
+  {
+    "event": "text_delta",
+    "text": "hello"
+  },
+  {
+    "event": "text_delta",
+    "text": " from"
+  },
+  {
+    "event": "text_delta",
+    "text": " kum"
+  },
+  {
+    "event": "text_delta",
+    "text": "ikit"
+  },
+  {
+    "event": "text_done",
+    "text": "hello from kumikit"
+  },
+  "turn_done"
+]

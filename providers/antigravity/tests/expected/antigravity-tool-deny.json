@@ -1,0 +1,41 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "call": "call_16185718340082955966",
+    "event": "tool_started",
+    "input": {
+      "CommandLine": "touch denied.txt",
+      "WaitMsBeforeAsync": 5000,
+      "toolSummary": "Touch denied.txt"
+    },
+    "name": "touch denied.txt"
+  },
+  {
+    "approve": {
+      "kind": "tool",
+      "summary": "touch denied.txt"
+    }
+  },
+  {
+    "call": "call_16185718340082955966",
+    "chunk": "",
+    "event": "tool_output"
+  },
+  {
+    "call": "call_16185718340082955966",
+    "event": "tool_finished",
+    "ok": false,
+    "result": {
+      "output": ""
+    }
+  },
+  {
+    "cost": null,
+    "event": "usage",
+    "input_tokens": 10053,
+    "output_tokens": 79
+  },
+  "turn_done"
+]

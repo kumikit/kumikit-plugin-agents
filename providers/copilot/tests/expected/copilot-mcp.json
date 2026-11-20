@@ -1,0 +1,100 @@
+[
+  {
+    "ready": "session-1"
+  },
+  {
+    "event": "text_delta",
+    "text": "I"
+  },
+  {
+    "event": "text_delta",
+    "text": " couldn"
+  },
+  {
+    "event": "text_delta",
+    "text": "’t"
+  },
+  {
+    "event": "text_delta",
+    "text": " call"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "test"
+  },
+  {
+    "event": "text_delta",
+    "text": "_tool"
+  },
+  {
+    "event": "text_delta",
+    "text": "__"
+  },
+  {
+    "event": "text_delta",
+    "text": "echo"
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_delta",
+    "text": " because"
+  },
+  {
+    "event": "text_delta",
+    "text": " the"
+  },
+  {
+    "event": "text_delta",
+    "text": " `"
+  },
+  {
+    "event": "text_delta",
+    "text": "kum"
+  },
+  {
+    "event": "text_delta",
+    "text": "ikit"
+  },
+  {
+    "event": "text_delta",
+    "text": "`"
+  },
+  {
+    "event": "text_delta",
+    "text": " MCP server"
+  },
+  {
+    "event": "text_delta",
+    "text": "/tool isn"
+  },
+  {
+    "event": "text_delta",
+    "text": "’t available"
+  },
+  {
+    "event": "text_delta",
+    "text": " in this"
+  },
+  {
+    "event": "text_delta",
+    "text": " session."
+  },
+  {
+    "event": "text_done",
+    "text": "I couldn’t call `test_tool__echo` because the `kumikit` MCP server/tool isn’t available in this session."
+  },
+  {
+    "cost": null,
+    "event": "usage",
+    "input_tokens": 17074,
+    "output_tokens": 125
+  },
+  "turn_done"
+]
