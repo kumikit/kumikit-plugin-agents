@@ -176,9 +176,84 @@ impl Plugin for Claude {
     }
 }
 
+/// Probes Claude Code's `initialize` control response to discover the exact versioned
+/// models available to the local CLI. Returns `None` if `claude` cannot be started or
+/// reports no models, so `list_models` falls back cleanly to static aliases.
+fn probe_models(config: &Config) -> Option<Vec<Model>> {
+    let mut env: Vec<(String, String)> = config
+        .env
+        .iter()
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+    if !env
+        .iter()
+        .any(|(k, _)| k == "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")
+    {
+        env.push((
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC".into(),
+            "1".into(),
+        ));
+    }
+    let child = process::spawn(&SpawnRequest {
+        program: config.command.clone(),
+        args: config.args_for("default", None, None),
+        cwd: None,
+        env,
+        secret_env: config.secret_env.clone().into_iter().collect(),
+    })
+    .ok()?;
+    let mut state = State {
+        session: Session::new(Options::default()),
+        child,
+        buf: Vec::new(),
+    };
+    let start = state.session.start();
+    let res = state.run(start);
+    state.child.close_stdin();
+    state.child.kill();
+    let Ok(Stop::Ready(_)) = res else {
+        return None;
+    };
+    let discovered = state.session.discovered_models();
+    if discovered.is_empty() {
+        return None;
+    }
+    let caps = vec![
+        "tools".into(),
+        "approvals".into(),
+        "reasoning".into(),
+        "resume".into(),
+    ];
+    Some(
+        discovered
+            .iter()
+            .map(|m| Model {
+                id: m.id.clone(),
+                label: m.label.clone(),
+                capabilities: caps.clone(),
+            })
+            .collect(),
+    )
+}
+
 impl Provider for Claude {
     fn list_models(provider: ProviderRef) -> Result<Vec<Model>, Error> {
-        Ok(config(&provider)?
+        let cfg = config(&provider)?;
+        if !cfg.models.is_empty() {
+            return Ok(cfg
+                .models()
+                .into_iter()
+                .map(|m| Model {
+                    id: m.id,
+                    label: m.label,
+                    capabilities: m.capabilities,
+                })
+                .collect());
+        }
+        if let Some(models) = probe_models(&cfg) {
+            return Ok(models);
+        }
+        Ok(cfg
             .models()
             .into_iter()
             .map(|m| Model {

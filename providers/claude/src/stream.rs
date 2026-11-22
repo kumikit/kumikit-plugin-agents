@@ -108,6 +108,15 @@ pub enum Action {
     Failed(String),
 }
 
+/// A model reported by Claude Code in its `initialize` control response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DiscoveredModel {
+    /// Model id or alias (`value`) to pass to `--model`.
+    pub id: String,
+    /// Human-readable display label (including version when reported).
+    pub label: String,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Phase {
     Idle,
@@ -141,6 +150,78 @@ pub struct Session {
     tool_order: Vec<String>,
     /// Input map remembered for `can_use_tool` replies if needed.
     pending_requests: HashMap<String, Value>,
+    /// Models reported by Claude Code in the `initialize` control response, if any.
+    discovered_models: Vec<DiscoveredModel>,
+}
+
+/// Formats a human-readable model label from a Claude Code `initialize` model entry.
+fn model_label(
+    value: &str,
+    display_name: Option<&str>,
+    description: Option<&str>,
+    resolved: Option<&str>,
+) -> String {
+    let short_desc = description
+        .and_then(|d| d.split(" · ").next())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if value == "default" {
+        return match short_desc {
+            Some(v) => format!("Default ({v})"),
+            None => display_name.unwrap_or("Default").to_owned(),
+        };
+    }
+    if let Some(short) = short_desc
+        && short.chars().any(|c| c.is_ascii_digit())
+    {
+        return if short.starts_with("Claude ") {
+            short.to_owned()
+        } else {
+            format!("Claude {short}")
+        };
+    }
+    if let Some(name) = display_name.filter(|s| !s.is_empty()) {
+        if let Some(res) = resolved.filter(|r| !r.is_empty() && *r != value)
+            && !name.chars().any(|c| c.is_ascii_digit())
+        {
+            return format!("{name} ({res})");
+        }
+        return name.to_owned();
+    }
+    resolved.unwrap_or(value).to_owned()
+}
+
+/// Extracts available models from a Claude Code `initialize` `control_response.response.response`.
+pub fn extract_models(response: &Value) -> Vec<DiscoveredModel> {
+    let Some(items) = response["models"].as_array() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for item in items {
+        let Some(id) = item["value"].as_str().filter(|s| !s.is_empty()) else {
+            continue;
+        };
+        if out.iter().any(|m: &DiscoveredModel| m.id == id) {
+            continue;
+        }
+        let label = model_label(
+            id,
+            item["displayName"].as_str(),
+            item["description"].as_str(),
+            item["resolvedModel"].as_str(),
+        );
+        out.push(DiscoveredModel {
+            id: id.to_owned(),
+            label,
+        });
+    }
+    if let Some(pos) = out.iter().position(|m| m.id == "default")
+        && pos > 0
+    {
+        let item = out.remove(pos);
+        out.insert(0, item);
+    }
+    out
 }
 
 impl Session {
@@ -157,7 +238,13 @@ impl Session {
             finished_tools: HashSet::new(),
             tool_order: Vec::new(),
             pending_requests: HashMap::new(),
+            discovered_models: Vec::new(),
         }
+    }
+
+    /// Models reported by Claude Code during `initialize`, if any.
+    pub fn discovered_models(&self) -> &[DiscoveredModel] {
+        &self.discovered_models
     }
 
     fn next_request_id(&mut self) -> String {
@@ -295,6 +382,7 @@ impl Session {
                     .to_owned();
                 return vec![Action::Failed(err)];
             }
+            self.discovered_models = extract_models(&resp["response"]);
             self.phase = Phase::Ready;
             let session = self
                 .session_id
@@ -669,5 +757,40 @@ mod tests {
         let v: Value = serde_json::from_str(line).unwrap();
         assert_eq!(v["type"], "control_request");
         assert_eq!(v["request"]["subtype"], "interrupt");
+    }
+
+    #[test]
+    fn extracts_versioned_models_from_initialize_response() {
+        let mut s = Session::new(Options::default());
+        s.start();
+        let ready = s.on_line(
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{"models":[{"value":"default","resolvedModel":"claude-opus-5-5","displayName":"Default (recommended)","description":"Opus 5.5 · Best for everyday, complex tasks"},{"value":"opus","resolvedModel":"claude-opus-5-5","displayName":"Opus","description":"Opus 5.5 · Best for everyday, complex tasks"},{"value":"claude-fable-5-2[1m]","resolvedModel":"claude-fable-5-2","displayName":"Fable","description":"Fable 5.2 · Most capable"},{"value":"sonnet","resolvedModel":"claude-sonnet-5-5","displayName":"Sonnet","description":"Sonnet 5.5 · Efficient"},{"value":"haiku","resolvedModel":"claude-haiku-5-5","displayName":"Haiku","description":"Haiku 5.5 · Fastest"}]}}}"#,
+        );
+        assert!(matches!(ready.as_slice(), [Action::Ready { .. }]));
+        assert_eq!(
+            s.discovered_models(),
+            &[
+                DiscoveredModel {
+                    id: "default".into(),
+                    label: "Default (Opus 5.5)".into()
+                },
+                DiscoveredModel {
+                    id: "opus".into(),
+                    label: "Claude Opus 5.5".into()
+                },
+                DiscoveredModel {
+                    id: "claude-fable-5-2[1m]".into(),
+                    label: "Claude Fable 5.2".into()
+                },
+                DiscoveredModel {
+                    id: "sonnet".into(),
+                    label: "Claude Sonnet 5.5".into()
+                },
+                DiscoveredModel {
+                    id: "haiku".into(),
+                    label: "Claude Haiku 5.5".into()
+                },
+            ]
+        );
     }
 }
