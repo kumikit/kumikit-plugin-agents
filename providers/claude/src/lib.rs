@@ -17,7 +17,41 @@ use kumikit_provider::{
 };
 
 use crate::config::{Config, McpServerSpec};
-use crate::stream::{Action, Options, Session};
+use crate::stream::{Action, Attachment, Options, Session};
+
+fn split_attachments(raw: &str) -> (String, Vec<Attachment>) {
+    const MARKER: &str = "[kumikit-attachments:";
+    let Some(idx) = raw.rfind(MARKER) else {
+        return (raw.to_owned(), Vec::new());
+    };
+    let rest = &raw[idx + MARKER.len()..];
+    let Some(end) = rest.find(']') else {
+        return (raw.to_owned(), Vec::new());
+    };
+    let manifest_path = &rest[..end];
+    let Ok(manifest_text) = std::fs::read_to_string(manifest_path) else {
+        return (raw.to_owned(), Vec::new());
+    };
+    let Ok(manifest) = serde_json::from_str::<serde_json::Value>(&manifest_text) else {
+        return (raw.to_owned(), Vec::new());
+    };
+    let Some(items) = manifest["attachments"].as_array() else {
+        return (raw.to_owned(), Vec::new());
+    };
+    let attachments: Vec<Attachment> = items
+        .iter()
+        .filter_map(|item| {
+            Some(Attachment {
+                name: item["name"].as_str()?.to_owned(),
+                mime_type: item["mimeType"].as_str()?.to_owned(),
+                host_path: item["hostPath"].as_str()?.to_owned(),
+                data: item["data"].as_str().map(str::to_owned),
+            })
+        })
+        .collect();
+    let clean = raw[..idx].trim_end_matches('\n').to_owned();
+    (clean, attachments)
+}
 
 struct Claude;
 
@@ -223,6 +257,8 @@ fn probe_models(config: &Config) -> Option<Vec<Model>> {
         "approvals".into(),
         "reasoning".into(),
         "resume".into(),
+        "images".into(),
+        "plan-mode".into(),
     ];
     Some(
         discovered
@@ -272,9 +308,19 @@ impl Provider for Claude {
             args: m.args,
             env: m.env,
         });
+        let permission_mode = cfg
+            .options
+            .iter()
+            .find(|(k, _)| k == "permission-mode")
+            .map(|(_, v)| v.as_str());
         let child = process::spawn(&SpawnRequest {
             program: config.command.clone(),
-            args: config.args_for(&cfg.model, cfg.resume.as_deref(), mcp.as_ref()),
+            args: config.args_for_with_mode(
+                &cfg.model,
+                cfg.resume.as_deref(),
+                mcp.as_ref(),
+                permission_mode,
+            ),
             cwd: None,
             env: config.env.clone().into_iter().collect(),
             secret_env: config.secret_env.clone().into_iter().collect(),
@@ -299,7 +345,8 @@ impl Provider for Claude {
             let state = guard
                 .as_mut()
                 .ok_or_else(|| err(ErrorCode::Conflict, "no session is open"))?;
-            let prompt = state.session.prompt(&input.text);
+            let (text, attachments) = split_attachments(&input.text);
+            let prompt = state.session.prompt_with_attachments(&text, &attachments);
             state.run(prompt).map(|_| ())
         })
     }

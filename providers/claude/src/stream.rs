@@ -117,6 +117,19 @@ pub struct DiscoveredModel {
     pub label: String,
 }
 
+/// A file or image attachment provided alongside a user prompt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Attachment {
+    /// Display filename.
+    pub name: String,
+    /// MIME type.
+    pub mime_type: String,
+    /// Host path on disk where the file was materialized.
+    pub host_path: String,
+    /// Base64-encoded bytes (present for images).
+    pub data: Option<String>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Phase {
     Idle,
@@ -269,6 +282,15 @@ impl Session {
 
     /// Sends a user prompt turn.
     pub fn prompt(&mut self, text: &str) -> Vec<Action> {
+        self.prompt_with_attachments(text, &[])
+    }
+
+    /// Sends a user prompt turn with optional image/file attachments.
+    pub fn prompt_with_attachments(
+        &mut self,
+        text: &str,
+        attachments: &[Attachment],
+    ) -> Vec<Action> {
         if self.phase != Phase::Ready {
             return vec![Action::Failed("the session is not ready".into())];
         }
@@ -279,10 +301,53 @@ impl Session {
         self.finished_tools.clear();
         self.tool_order.clear();
         self.pending_requests.clear();
+
+        if attachments.is_empty() {
+            return vec![Action::Write(
+                json!({
+                    "type": "user",
+                    "message": { "role": "user", "content": text }
+                })
+                .to_string(),
+            )];
+        }
+
+        let mut blocks = Vec::new();
+        let mut file_notes = Vec::new();
+        for a in attachments {
+            if matches!(
+                a.mime_type.as_str(),
+                "image/png" | "image/jpeg" | "image/gif" | "image/webp"
+            ) && let Some(data) = &a.data
+            {
+                blocks.push(json!({
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": a.mime_type,
+                        "data": data,
+                    }
+                }));
+            } else {
+                file_notes.push(format!(
+                    "Attached file: {} ({}) at {}",
+                    a.name, a.mime_type, a.host_path
+                ));
+            }
+        }
+        let combined = match (text.is_empty(), file_notes.is_empty()) {
+            (false, true) => text.to_owned(),
+            (true, false) => file_notes.join("\n"),
+            (false, false) => format!("{text}\n\n{}", file_notes.join("\n")),
+            (true, true) => String::new(),
+        };
+        if !combined.is_empty() {
+            blocks.push(json!({ "type": "text", "text": combined }));
+        }
         vec![Action::Write(
             json!({
                 "type": "user",
-                "message": { "role": "user", "content": text }
+                "message": { "role": "user", "content": blocks }
             })
             .to_string(),
         )]
@@ -792,5 +857,44 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn multimodal_prompt_encodes_images_and_file_paths() {
+        let mut s = Session::new(Options::default());
+        s.start();
+        s.on_line(
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{}}}"#,
+        );
+        let out = s.prompt_with_attachments(
+            "what is this?",
+            &[
+                Attachment {
+                    name: "shot.png".into(),
+                    mime_type: "image/png".into(),
+                    host_path: "/tmp/0-shot.png".into(),
+                    data: Some("iVBORw0KGgo=".into()),
+                },
+                Attachment {
+                    name: "spec.md".into(),
+                    mime_type: "text/markdown".into(),
+                    host_path: "/tmp/1-spec.md".into(),
+                    data: None,
+                },
+            ],
+        );
+        let [Action::Write(line)] = out.as_slice() else {
+            panic!("{out:?}");
+        };
+        let v: Value = serde_json::from_str(line).unwrap();
+        let content = v["message"]["content"].as_array().unwrap();
+        assert_eq!(content.len(), 2);
+        assert_eq!(content[0]["type"], "image");
+        assert_eq!(content[0]["source"]["media_type"], "image/png");
+        assert_eq!(content[0]["source"]["data"], "iVBORw0KGgo=");
+        assert_eq!(content[1]["type"], "text");
+        let text = content[1]["text"].as_str().unwrap();
+        assert!(text.contains("what is this?"));
+        assert!(text.contains("/tmp/1-spec.md"));
     }
 }
