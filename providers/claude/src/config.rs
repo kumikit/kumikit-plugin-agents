@@ -125,6 +125,8 @@ impl Config {
                 "approvals".into(),
                 "reasoning".into(),
                 "resume".into(),
+                "images".into(),
+                "plan-mode".into(),
             ];
             vec![
                 ModelEntry {
@@ -153,12 +155,34 @@ impl Config {
         }
     }
 
+    /// Maps a Kumikit thread `permission-mode` option to Claude Code's `--permission-mode`.
+    pub fn map_permission_mode(&self, option: Option<&str>) -> String {
+        match option {
+            Some("accept_edits") => "acceptEdits".to_owned(),
+            Some("plan") => "plan".to_owned(),
+            Some("full_access") => "bypassPermissions".to_owned(),
+            _ => self.permission_mode.clone(),
+        }
+    }
+
     /// Command-line arguments for a Claude Code `stream-json` session.
     pub fn args_for(
         &self,
         model: &str,
         resume: Option<&str>,
         mcp: Option<&McpServerSpec>,
+    ) -> Vec<String> {
+        self.args_for_with_mode(model, resume, mcp, None)
+    }
+
+    /// Command-line arguments for a Claude Code `stream-json` session with an optional
+    /// Kumikit permission mode (`standard`, `accept_edits`, `plan`, `full_access`).
+    pub fn args_for_with_mode(
+        &self,
+        model: &str,
+        resume: Option<&str>,
+        mcp: Option<&McpServerSpec>,
+        permission_mode: Option<&str>,
     ) -> Vec<String> {
         let mut out = self.args.clone();
         out.extend([
@@ -172,7 +196,7 @@ impl Config {
             "--permission-prompt-tool".to_owned(),
             "stdio".to_owned(),
             "--permission-mode".to_owned(),
-            self.permission_mode.clone(),
+            self.map_permission_mode(permission_mode),
         ]);
         if let Some(flag) = &self.model_arg
             && !model.is_empty()
@@ -248,5 +272,21 @@ mod tests {
             v["mcpServers"]["kumikit"]["env"]["KUMIKIT_MCP_TOKEN"],
             "tok"
         );
+    }
+
+    #[test]
+    fn maps_kumikit_permission_modes_to_claude_cli_flags() {
+        let cfg = Config::default();
+        assert_eq!(cfg.map_permission_mode(None), "manual");
+        assert_eq!(cfg.map_permission_mode(Some("standard")), "manual");
+        assert_eq!(cfg.map_permission_mode(Some("accept_edits")), "acceptEdits");
+        assert_eq!(cfg.map_permission_mode(Some("plan")), "plan");
+        assert_eq!(
+            cfg.map_permission_mode(Some("full_access")),
+            "bypassPermissions"
+        );
+        let args = cfg.args_for_with_mode("default", None, None, Some("full_access"));
+        let idx = args.iter().position(|a| a == "--permission-mode").unwrap();
+        assert_eq!(args[idx + 1], "bypassPermissions");
     }
 }
