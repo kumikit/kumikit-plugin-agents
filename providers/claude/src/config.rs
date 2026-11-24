@@ -127,6 +127,7 @@ impl Config {
                 "resume".into(),
                 "images".into(),
                 "plan-mode".into(),
+                "steer".into(),
             ];
             vec![
                 ModelEntry {

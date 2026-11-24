@@ -30,7 +30,7 @@ const call = (method, params) =>
     c.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
   });
 
-await call('core.hello', { protocol: '0.7', client: { name: 'kumikit-agents-recorder', version: '0' } });
+await call('core.hello', { protocol: '0.8', client: { name: 'kumikit-agents-recorder', version: '0' } });
 let recorder;
 for (const dir of [acpDir, toolDir, recorderDir]) {
   const { plugin } = await call('plugin.install', { path: dir });

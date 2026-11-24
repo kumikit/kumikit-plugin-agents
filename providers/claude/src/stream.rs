@@ -260,6 +260,11 @@ impl Session {
         &self.discovered_models
     }
 
+    /// Whether a prompt turn is currently in flight.
+    pub fn is_prompting(&self) -> bool {
+        self.phase == Phase::Prompting
+    }
+
     fn next_request_id(&mut self) -> String {
         self.next_req += 1;
         format!("req-{}", self.next_req)
@@ -348,6 +353,24 @@ impl Session {
             json!({
                 "type": "user",
                 "message": { "role": "user", "content": blocks }
+            })
+            .to_string(),
+        )]
+    }
+
+    /// Sends a steering message to Claude Code while a turn is running (ADR 0028).
+    /// Resets accumulated text so `TextDone` at turn end covers only text emitted after
+    /// the steer.
+    pub fn steer(&mut self, text: &str) -> Vec<Action> {
+        if self.phase != Phase::Prompting {
+            return Vec::new();
+        }
+        self.text.clear();
+        self.streamed_text = false;
+        vec![Action::Write(
+            json!({
+                "type": "user",
+                "message": { "role": "user", "content": text }
             })
             .to_string(),
         )]
@@ -896,5 +919,39 @@ mod tests {
         let text = content[1]["text"].as_str().unwrap();
         assert!(text.contains("what is this?"));
         assert!(text.contains("/tmp/1-spec.md"));
+    }
+
+    #[test]
+    fn steer_writes_user_message_mid_turn_and_resets_accumulated_text() {
+        let mut s = Session::new(Options::default());
+        s.start();
+        s.on_line(
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{}}}"#,
+        );
+        s.prompt("start");
+        assert!(s.is_prompting());
+        s.on_line(
+            r#"{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"before"}}}"#,
+        );
+        let steered = s.steer("use the helper");
+        let [Action::Write(line)] = steered.as_slice() else {
+            panic!("{steered:?}");
+        };
+        let v: Value = serde_json::from_str(line).unwrap();
+        assert_eq!(v["type"], "user");
+        assert_eq!(v["message"]["content"], "use the helper");
+        s.on_line(
+            r#"{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"after"}}}"#,
+        );
+        let done = s.on_line(
+            r#"{"type":"result","subtype":"success","is_error":false,"usage":{"input_tokens":5,"output_tokens":2}}"#,
+        );
+        assert_eq!(
+            done[0],
+            Action::Emit(Event::TextDone {
+                text: "after".into()
+            })
+        );
+        assert!(!s.is_prompting());
     }
 }
