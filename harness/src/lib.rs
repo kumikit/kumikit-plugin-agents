@@ -170,6 +170,7 @@ pub fn replay(
             mode: mode.map(str::to_owned),
             auth_method: auth_method.map(str::to_owned),
             mcp: recorded_mcp(&lines),
+            ..Options::default()
         }),
         writes: VecDeque::new(),
         approvals: HashMap::new(),

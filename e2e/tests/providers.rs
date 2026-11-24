@@ -180,7 +180,7 @@ impl Core {
         };
         c.call(
             "core.hello",
-            json!({ "protocol": "0.7", "client": { "name": "kumikit-agents-e2e", "version": "0" } }),
+            json!({ "protocol": "0.8", "client": { "name": "kumikit-agents-e2e", "version": "0" } }),
         );
         c
     }
@@ -680,6 +680,99 @@ fn claude_provider_and_deepseek_example_run_end_to_end() {
         }
         assert_eq!(kinds, expected_kinds(&expected), "{stem}");
     }
+
+    // 4. Mid-turn steering through `provider-claude` and `fake-acp-agent replay`.
+    let steer_transcript = core.tmp.path().join("claude-steer.jsonl");
+    let steer_lines = [
+        json!({"from": "client", "message": {"type": "control_request", "request_id": "req-1", "request": {"subtype": "initialize"}}}),
+        json!({"from": "agent", "message": {"type": "control_response", "response": {"subtype": "success", "request_id": "req-1", "response": {}}}}),
+        json!({"from": "client", "message": {"type": "user", "message": {"role": "user", "content": "start"}}}),
+        json!({"from": "agent", "message": {"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "working"}}}}),
+        json!({"from": "client", "message": {"type": "user", "message": {"role": "user", "content": "go left"}}}),
+        json!({"from": "agent", "message": {"type": "stream_event", "event": {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "steered ok"}}}}),
+        json!({"from": "agent", "message": {"type": "result", "subtype": "success", "is_error": false, "usage": {"input_tokens": 5, "output_tokens": 2}}}),
+    ];
+    std::fs::write(
+        &steer_transcript,
+        steer_lines
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n",
+    )
+    .unwrap();
+    let steer_file = steer_transcript.to_string_lossy().replace('\\', "\\\\");
+    let steer_manifest = core.tmp.path().join("claude-steer.toml");
+    std::fs::write(
+        &steer_manifest,
+        format!(
+            "id = \"test.steer-claude\"\nname = \"Steer Claude\"\nversion = \"0.1.0\"\nkind = [\"provider\"]\napi = \"^0.2\"\n\
+             [permissions]\nspawn = [\"fake-acp-agent\"]\n[contributes]\nproviders = [\n\
+               {{ id = \"steer\", name = \"Steer\", claude = {{ command = \"fake-acp-agent\", args = [\"replay\", \"{steer_file}\"] }} }},\n\
+             ]\n"
+        ),
+    )
+    .unwrap();
+    core.install_files(&bins, "steer-claude", &[("plugin.toml", &steer_manifest)]);
+    let models = core.call(
+        "provider.models",
+        json!({ "provider": "test.steer-claude/steer" }),
+    );
+    assert!(
+        models["models"][0]["capabilities"]
+            .as_array()
+            .is_some_and(|c| c.iter().any(|x| x == "steer")),
+        "provider-claude models must report steer capability: {models}"
+    );
+    let created = core.call(
+        "thread.create",
+        json!({ "workspace": ws, "provider": "test.steer-claude/steer" }),
+    );
+    let thread = created["thread"]["id"].as_str().unwrap().to_owned();
+    let topic = format!("thread:{thread}");
+    core.call("events.subscribe", json!({ "topic": topic, "after": 0 }));
+    core.call(
+        "thread.send",
+        json!({ "thread": thread, "input": { "text": "start" } }),
+    );
+    let deadline = Instant::now() + DEADLINE;
+    loop {
+        let e = core.event(&topic, deadline);
+        if e["kind"] == "text.delta" && e["data"]["text"] == "working" {
+            break;
+        }
+    }
+    let steered = core.call(
+        "thread.steer",
+        json!({ "thread": thread, "input": { "text": "go left" } }),
+    );
+    assert_eq!(steered["status"], "accepted", "{steered}");
+    let mut after = Vec::new();
+    let mut final_text = String::new();
+    loop {
+        let e = core.event(&topic, deadline);
+        let kind = e["kind"].as_str().unwrap().to_owned();
+        if kind == "text.done" {
+            final_text = e["data"]["text"].as_str().unwrap_or_default().to_owned();
+        }
+        after.push(kind.clone());
+        if kind == "turn.ended" {
+            assert_eq!(e["data"]["outcome"], "done", "{e}");
+            break;
+        }
+    }
+    assert_eq!(
+        after,
+        [
+            "input.steered",
+            "text.delta",
+            "text.done",
+            "usage",
+            "turn.ended"
+        ]
+    );
+    assert_eq!(final_text, "steered ok");
 }
 
 #[test]

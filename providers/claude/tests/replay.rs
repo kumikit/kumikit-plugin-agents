@@ -70,7 +70,11 @@ fn replay(path: &Path) -> Result<Vec<Value>, String> {
         match msg["type"].as_str() {
             Some("user") => {
                 let text = msg["message"]["content"].as_str().unwrap_or_default();
-                let actions = r.session.prompt(text);
+                let actions = if r.session.is_prompting() {
+                    r.session.steer(text)
+                } else {
+                    r.session.prompt(text)
+                };
                 r.take(actions);
             }
             Some("control_request") if msg["request"]["subtype"].as_str() == Some("interrupt") => {

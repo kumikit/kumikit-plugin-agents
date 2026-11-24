@@ -10,7 +10,7 @@ api = "^0.2"
 
 [runtime]
 wasm = "plugin.wasm"
-worlds = ["kumikit:provider/plugin@0.2.0"]
+worlds = ["kumikit:provider/plugin@0.2.0", "kumikit:turn/provider@0.1.0"]
 
 [permissions]
 spawn = ["claude"]

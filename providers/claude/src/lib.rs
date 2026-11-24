@@ -13,7 +13,7 @@ use std::cell::RefCell;
 
 use kumikit_provider::{
     Child, Decision, Error, ErrorCode, Event, Model, Plugin, Provider, ProviderRef, SessionConfig,
-    SpawnRequest, UserInput, events, process, take_line,
+    SpawnRequest, UserInput, events, process, steering, take_line,
 };
 
 use crate::config::{Config, McpServerSpec};
@@ -108,17 +108,38 @@ enum Stop {
     TurnDone,
 }
 
+enum Input {
+    Line(String),
+    Steer(UserInput),
+    Eof,
+}
+
 impl State {
-    fn read_line(&mut self) -> Result<Option<String>, Error> {
+    fn read_next(&mut self) -> Result<Input, Error> {
         loop {
             if let Some(line) = take_line(&mut self.buf, false) {
-                return Ok(Some(String::from_utf8_lossy(&line).into_owned()));
+                return Ok(Input::Line(String::from_utf8_lossy(&line).into_owned()));
             }
-            match self.child.read_stdout(64 * 1024)? {
-                Some(chunk) => self.buf.extend_from_slice(&chunk),
-                None => {
-                    return Ok(take_line(&mut self.buf, true)
-                        .map(|l| String::from_utf8_lossy(&l).into_owned()));
+            if self.session.is_prompting() {
+                match steering::read_stdout(&self.child, 64 * 1024)? {
+                    steering::Read::Stdout(chunk) => self.buf.extend_from_slice(&chunk),
+                    steering::Read::Input(input) => return Ok(Input::Steer(input)),
+                    steering::Read::Eof => {
+                        return Ok(match take_line(&mut self.buf, true) {
+                            Some(l) => Input::Line(String::from_utf8_lossy(&l).into_owned()),
+                            None => Input::Eof,
+                        });
+                    }
+                }
+            } else {
+                match self.child.read_stdout(64 * 1024)? {
+                    Some(chunk) => self.buf.extend_from_slice(&chunk),
+                    None => {
+                        return Ok(match take_line(&mut self.buf, true) {
+                            Some(l) => Input::Line(String::from_utf8_lossy(&l).into_owned()),
+                            None => Input::Eof,
+                        });
+                    }
                 }
             }
         }
@@ -129,17 +150,20 @@ impl State {
         let mut cancelled = false;
         loop {
             let Some(action) = queue.pop() else {
-                let line = match self.read_line() {
-                    Ok(Some(l)) => l,
-                    Ok(None) => return Err(err(ErrorCode::Io, "Claude Code exited")),
+                match self.read_next() {
+                    Ok(Input::Line(l)) => {
+                        queue.extend(self.session.on_line(&l).into_iter().rev());
+                    }
+                    Ok(Input::Steer(input)) => {
+                        queue.extend(self.session.steer(&input.text).into_iter().rev());
+                    }
+                    Ok(Input::Eof) => return Err(err(ErrorCode::Io, "Claude Code exited")),
                     Err(e) if is_cancelled(&e) => {
                         cancelled = true;
                         queue.extend(self.session.cancel().into_iter().rev());
-                        continue;
                     }
                     Err(e) => return Err(e),
-                };
-                queue.extend(self.session.on_line(&line).into_iter().rev());
+                }
                 continue;
             };
             match action {
@@ -259,6 +283,7 @@ fn probe_models(config: &Config) -> Option<Vec<Model>> {
         "resume".into(),
         "images".into(),
         "plan-mode".into(),
+        "steer".into(),
     ];
     Some(
         discovered
