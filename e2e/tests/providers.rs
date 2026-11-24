@@ -180,7 +180,7 @@ impl Core {
         };
         c.call(
             "core.hello",
-            json!({ "protocol": "0.6", "client": { "name": "kumikit-agents-e2e", "version": "0" } }),
+            json!({ "protocol": "0.7", "client": { "name": "kumikit-agents-e2e", "version": "0" } }),
         );
         c
     }

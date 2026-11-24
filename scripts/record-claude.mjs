@@ -186,7 +186,7 @@ try {
       c.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
     });
 
-  await call('core.hello', { protocol: '0.6', client: { name: 'claude-recorder', version: '0' } });
+  await call('core.hello', { protocol: '0.7', client: { name: 'claude-recorder', version: '0' } });
   for (const dir of [claudePkg, toolPkg, recPkg]) {
     const { plugin } = await call('plugin.install', { path: dir });
     await call('plugin.enable', { plugin: plugin.id, grant: plugin.requested });
