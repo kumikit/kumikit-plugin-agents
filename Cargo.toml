@@ -14,8 +14,8 @@ publish = false
 [workspace.dependencies]
 # The SDKs and provider-acp's ACP translation, pinned to a commit of kumikit/kumikit.
 # Move every pin together (scripts/pin.sh).
-kumikit-provider = { git = "https://github.com/kumikit/kumikit", rev = "50848158fda55fef8b1a48850769d18f20b45e3b" }
-kumikit-provider-acp = { git = "https://github.com/kumikit/kumikit", rev = "50848158fda55fef8b1a48850769d18f20b45e3b" }
+kumikit-provider = { git = "https://github.com/kumikit/kumikit", rev = "0fa256e528058d05b42d4b09bf76b028865370ca" }
+kumikit-provider-acp = { git = "https://github.com/kumikit/kumikit", rev = "0fa256e528058d05b42d4b09bf76b028865370ca" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 toml = "1.2.1"
