@@ -63,6 +63,32 @@ pub enum Event {
         /// Reported USD cost, if any.
         cost: Option<f64>,
     },
+    /// `commands.available`
+    CommandsAvailable {
+        /// Slash commands advertised by Claude Code (`system/init` or `initialize`).
+        commands: Vec<SlashCommand>,
+    },
+    /// `limit.reached`
+    LimitReached {
+        /// ISO-8601 UTC timestamp when the usage limit resets, if known.
+        reset_at: Option<String>,
+        /// Human-readable explanation.
+        message: String,
+    },
+}
+
+/// One slash command reported by Claude Code (`system/init` `slash_commands` or
+/// `initialize` `commands`).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct SlashCommand {
+    /// Command name without a leading `/`.
+    pub name: String,
+    /// Optional short description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Optional argument hint.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hint: Option<String>,
 }
 
 /// The user's answer to a `can_use_tool` permission request.
@@ -165,6 +191,10 @@ pub struct Session {
     pending_requests: HashMap<String, Value>,
     /// Models reported by Claude Code in the `initialize` control response, if any.
     discovered_models: Vec<DiscoveredModel>,
+    /// Slash commands announced before the first prompt, flushed when the prompt starts.
+    pending_commands: Option<Vec<SlashCommand>>,
+    /// Whether `LimitReached` has already been emitted for the active turn.
+    limit_emitted: bool,
 }
 
 /// Formats a human-readable model label from a Claude Code `initialize` model entry.
@@ -252,6 +282,8 @@ impl Session {
             tool_order: Vec::new(),
             pending_requests: HashMap::new(),
             discovered_models: Vec::new(),
+            pending_commands: None,
+            limit_emitted: false,
         }
     }
 
@@ -306,15 +338,24 @@ impl Session {
         self.finished_tools.clear();
         self.tool_order.clear();
         self.pending_requests.clear();
+        self.limit_emitted = false;
+
+        let mut out = Vec::new();
+        if let Some(commands) = self.pending_commands.take()
+            && !commands.is_empty()
+        {
+            out.push(Action::Emit(Event::CommandsAvailable { commands }));
+        }
 
         if attachments.is_empty() {
-            return vec![Action::Write(
+            out.push(Action::Write(
                 json!({
                     "type": "user",
                     "message": { "role": "user", "content": text }
                 })
                 .to_string(),
-            )];
+            ));
+            return out;
         }
 
         let mut blocks = Vec::new();
@@ -349,13 +390,14 @@ impl Session {
         if !combined.is_empty() {
             blocks.push(json!({ "type": "text", "text": combined }));
         }
-        vec![Action::Write(
+        out.push(Action::Write(
             json!({
                 "type": "user",
                 "message": { "role": "user", "content": blocks }
             })
             .to_string(),
-        )]
+        ));
+        out
     }
 
     /// Sends a steering message to Claude Code while a turn is running (ADR 0028).
@@ -449,12 +491,57 @@ impl Session {
         match msg.get("type").and_then(Value::as_str) {
             Some("control_response") => self.on_control_response(&msg),
             Some("control_request") => self.on_control_request(&msg),
+            Some("system") => self.on_system(&msg),
+            Some("rate_limit_event") => self.on_rate_limit_event(&msg),
             Some("stream_event") => self.on_stream_event(&msg),
             Some("assistant") => self.on_assistant(&msg),
             Some("user") => self.on_user(&msg),
             Some("result") => self.on_result(&msg),
             _ => Vec::new(),
         }
+    }
+
+    fn on_system(&mut self, msg: &Value) -> Vec<Action> {
+        if msg["subtype"].as_str() != Some("init") {
+            return Vec::new();
+        }
+        let commands = extract_slash_commands(&msg["slash_commands"]);
+        if commands.is_empty() {
+            return Vec::new();
+        }
+        if self.phase == Phase::Prompting {
+            vec![Action::Emit(Event::CommandsAvailable { commands })]
+        } else {
+            self.pending_commands = Some(commands);
+            Vec::new()
+        }
+    }
+
+    fn on_rate_limit_event(&mut self, msg: &Value) -> Vec<Action> {
+        if self.phase != Phase::Prompting {
+            return Vec::new();
+        }
+        let info = &msg["rate_limit_info"];
+        if info["status"].as_str() != Some("rejected") {
+            return Vec::new();
+        }
+        let reset_at = info["resetsAt"]
+            .as_i64()
+            .or_else(|| info["resets_at"].as_i64())
+            .and_then(unix_secs_to_iso)
+            .or_else(|| {
+                info["resetsAt"]
+                    .as_str()
+                    .or_else(|| info["resets_at"].as_str())
+                    .map(str::to_owned)
+            });
+        let message = info["message"]
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .unwrap_or("Claude Code usage limit reached")
+            .to_owned();
+        self.limit_emitted = true;
+        vec![Action::Emit(Event::LimitReached { reset_at, message })]
     }
 
     fn on_control_response(&mut self, msg: &Value) -> Vec<Action> {
@@ -471,6 +558,10 @@ impl Session {
                 return vec![Action::Failed(err)];
             }
             self.discovered_models = extract_models(&resp["response"]);
+            let cmds = extract_slash_commands(&resp["response"]["commands"]);
+            if !cmds.is_empty() {
+                self.pending_commands = Some(cmds);
+            }
             self.phase = Phase::Ready;
             let session = self
                 .session_id
@@ -672,12 +763,111 @@ impl Session {
                 .as_str()
                 .unwrap_or("Claude Code returned an error")
                 .to_owned();
+            if !self.limit_emitted && is_limit_message(&err) {
+                self.limit_emitted = true;
+                out.push(Action::Emit(Event::LimitReached {
+                    reset_at: None,
+                    message: err.clone(),
+                }));
+            }
             out.push(Action::Failed(err));
         } else {
             out.push(Action::TurnDone);
         }
         out
     }
+}
+
+fn extract_slash_commands(value: &Value) -> Vec<SlashCommand> {
+    let Some(items) = value.as_array() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for item in items {
+        let cmd = match item {
+            Value::String(s) => {
+                let name = s.trim().trim_start_matches('/');
+                if name.is_empty() {
+                    continue;
+                }
+                SlashCommand {
+                    name: name.to_owned(),
+                    description: None,
+                    hint: None,
+                }
+            }
+            Value::Object(_) => {
+                let Some(name) = item["name"]
+                    .as_str()
+                    .map(str::trim)
+                    .map(|s| s.trim_start_matches('/'))
+                    .filter(|s| !s.is_empty())
+                else {
+                    continue;
+                };
+                let description = item["description"]
+                    .as_str()
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_owned);
+                let hint = item["argumentHint"]
+                    .as_str()
+                    .or_else(|| item["hint"].as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_owned);
+                SlashCommand {
+                    name: name.to_owned(),
+                    description,
+                    hint,
+                }
+            }
+            _ => continue,
+        };
+        if !out
+            .iter()
+            .any(|existing: &SlashCommand| existing.name == cmd.name)
+        {
+            out.push(cmd);
+        }
+    }
+    out
+}
+
+fn is_limit_message(message: &str) -> bool {
+    let lower = message.to_ascii_lowercase();
+    lower.contains("rate limit")
+        || lower.contains("usage limit")
+        || lower.contains("quota exceeded")
+        || lower.contains("overloaded")
+        || lower.contains("hit your limit")
+        || lower.contains("429")
+}
+
+/// Formats a non-negative Unix timestamp in seconds as RFC 3339 UTC (`YYYY-MM-DDTHH:MM:SSZ`).
+fn unix_secs_to_iso(secs: i64) -> Option<String> {
+    if secs < 0 {
+        return None;
+    }
+    let days = secs / 86_400;
+    let rem = secs % 86_400;
+    let hour = rem / 3_600;
+    let min = (rem % 3_600) / 60;
+    let sec = rem % 60;
+    // Howard Hinnant's civil-from-days algorithm.
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = y + i64::from(m <= 2);
+    Some(format!(
+        "{year:04}-{m:02}-{d:02}T{hour:02}:{min:02}:{sec:02}Z"
+    ))
 }
 
 fn tool_result_text(content: &Value) -> String {
@@ -953,5 +1143,91 @@ mod tests {
             })
         );
         assert!(!s.is_prompting());
+    }
+
+    #[test]
+    fn system_init_emits_slash_commands() {
+        let mut s = Session::new(Options::default());
+        s.start();
+        s.on_line(
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{}}}"#,
+        );
+        s.prompt("hi");
+        let actions = s.on_line(
+            r#"{"type":"system","subtype":"init","slash_commands":["/review","compact","compact"]}"#,
+        );
+        assert_eq!(
+            actions,
+            [Action::Emit(Event::CommandsAvailable {
+                commands: vec![
+                    SlashCommand {
+                        name: "review".into(),
+                        description: None,
+                        hint: None,
+                    },
+                    SlashCommand {
+                        name: "compact".into(),
+                        description: None,
+                        hint: None,
+                    },
+                ],
+            })]
+        );
+    }
+
+    #[test]
+    fn rate_limit_event_emits_limit_reached_with_iso_reset() {
+        let mut s = Session::new(Options::default());
+        s.start();
+        s.on_line(
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{}}}"#,
+        );
+        s.prompt("hi");
+        // Allowed warnings do not trigger limit_reached.
+        assert!(
+            s.on_line(
+                r#"{"type":"rate_limit_event","rate_limit_info":{"status":"allowed_warning","resetsAt":1735689600}}"#
+            )
+            .is_empty()
+        );
+        // Rejected emits LimitReached with ISO reset time.
+        let actions = s.on_line(
+            r#"{"type":"rate_limit_event","rate_limit_info":{"status":"rejected","resetsAt":1735689600,"message":"5h usage limit hit"}}"#,
+        );
+        assert_eq!(
+            actions,
+            [Action::Emit(Event::LimitReached {
+                reset_at: Some("2025-01-01T00:00:00Z".into()),
+                message: "5h usage limit hit".into(),
+            })]
+        );
+        // Subsequent error result does not duplicate LimitReached.
+        let done = s.on_line(
+            r#"{"type":"result","subtype":"error","is_error":true,"result":"Usage limit reached"}"#,
+        );
+        assert_eq!(done, [Action::Failed("Usage limit reached".into())]);
+    }
+
+    #[test]
+    fn error_result_rate_limit_emits_limit_reached() {
+        let mut s = Session::new(Options::default());
+        s.start();
+        s.on_line(
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{}}}"#,
+        );
+        s.prompt("hi");
+        let done = s.on_line(
+            r#"{"type":"result","subtype":"error","is_error":true,"result":"429 rate limit exceeded"}"#,
+        );
+        assert_eq!(
+            done,
+            [
+                Action::Emit(Event::LimitReached {
+                    reset_at: None,
+                    message: "429 rate limit exceeded".into(),
+                }),
+                Action::Failed("429 rate limit exceeded".into()),
+            ]
+        );
     }
 }
