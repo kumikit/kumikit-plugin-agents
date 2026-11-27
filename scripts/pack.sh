@@ -44,7 +44,7 @@ for name in antigravity copilot cursor opencode; do
   want_id "$id" || continue
   d="$STAGE/$name"
   mkdir -p "$d"
-  cp "providers/$name/plugin.toml" "providers/$name/README.md" "$d/"
+  cp "providers/$name/plugin.toml" "providers/$name/README.md" "providers/$name/icon.svg" "$d/"
   "$KUMIKIT_BIN" plugin pack "$d" -o "$OUT/$id-$ver.kkp"
 done
 
@@ -58,7 +58,7 @@ if want_id "$id"; then
   fi
   d="$STAGE/claude"
   mkdir -p "$d"
-  cp providers/claude/plugin.toml providers/claude/README.md providers/claude/claude.schema.json "$d/"
+  cp providers/claude/plugin.toml providers/claude/README.md providers/claude/claude.schema.json providers/claude/icon.svg "$d/"
   cp "$wasm" "$d/plugin.wasm"
   "$KUMIKIT_BIN" plugin pack "$d" -o "$OUT/$id-$ver.kkp"
 fi

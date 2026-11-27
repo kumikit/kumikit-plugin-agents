@@ -4,7 +4,7 @@ members = ["harness", "e2e", "providers/claude"]
 default-members = ["harness", "providers/claude"]
 
 [workspace.package]
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 rust-version = "1.100"
 license = "MIT"
@@ -14,8 +14,8 @@ publish = false
 [workspace.dependencies]
 # The SDKs and provider-acp's ACP translation, pinned to a commit of kumikit/kumikit.
 # Move every pin together (scripts/pin.sh).
-kumikit-provider = { git = "https://github.com/kumikit/kumikit", rev = "0fa256e528058d05b42d4b09bf76b028865370ca" }
-kumikit-provider-acp = { git = "https://github.com/kumikit/kumikit", rev = "0fa256e528058d05b42d4b09bf76b028865370ca" }
+kumikit-provider = { git = "https://github.com/kumikit/kumikit", rev = "20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3" }
+kumikit-provider-acp = { git = "https://github.com/kumikit/kumikit", rev = "20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 toml = "1.2.1"

@@ -16,3 +16,9 @@ Verify it is on your `PATH`:
 ```sh
 opencode --version
 ```
+
+## Icon
+
+`icon.svg` uses OpenCode's mark (from `lobehub/lobe-icons` / `homarr-labs/dashboard-icons`,
+`opencode.svg`, tinted neutral grey for light and dark themes) to identify the OpenCode
+harness. The mark remains the property of Anomaly / OpenCode.

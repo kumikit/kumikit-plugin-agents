@@ -185,6 +185,20 @@ impl Config {
         mcp: Option<&McpServerSpec>,
         permission_mode: Option<&str>,
     ) -> Vec<String> {
+        self.args_for_with_options(model, resume, mcp, permission_mode, None, None)
+    }
+
+    /// Command-line arguments for a Claude Code `stream-json` session with optional
+    /// Kumikit permission mode and model settings (`effort`, `speed`).
+    pub fn args_for_with_options(
+        &self,
+        model: &str,
+        resume: Option<&str>,
+        mcp: Option<&McpServerSpec>,
+        permission_mode: Option<&str>,
+        effort: Option<&str>,
+        speed: Option<&str>,
+    ) -> Vec<String> {
         let mut out = self.args.clone();
         out.extend([
             "-p".to_owned(),
@@ -205,6 +219,24 @@ impl Config {
         {
             out.push(flag.clone());
             out.push(model.to_owned());
+        }
+        if let Some(level) = effort
+            && !level.is_empty()
+            && level != "default"
+        {
+            out.push("--effort".to_owned());
+            out.push(level.to_owned());
+        }
+        match speed {
+            Some("fast") => {
+                out.push("--settings".to_owned());
+                out.push(r#"{"fastMode":true}"#.to_owned());
+            }
+            Some("standard") => {
+                out.push("--settings".to_owned());
+                out.push(r#"{"fastMode":false}"#.to_owned());
+            }
+            _ => {}
         }
         if let Some(id) = resume
             && !id.is_empty()
@@ -289,5 +321,31 @@ mod tests {
         let args = cfg.args_for_with_mode("default", None, None, Some("full_access"));
         let idx = args.iter().position(|a| a == "--permission-mode").unwrap();
         assert_eq!(args[idx + 1], "bypassPermissions");
+    }
+
+    #[test]
+    fn maps_effort_and_speed_model_options_to_cli_flags() {
+        let cfg = Config::default();
+        let plain = cfg.args_for_with_options("sonnet", None, None, None, None, None);
+        assert!(!plain.iter().any(|a| a == "--effort" || a == "--settings"));
+
+        let fast = cfg.args_for_with_options(
+            "opus",
+            None,
+            None,
+            Some("standard"),
+            Some("high"),
+            Some("fast"),
+        );
+        let ei = fast.iter().position(|a| a == "--effort").unwrap();
+        assert_eq!(fast[ei + 1], "high");
+        let si = fast.iter().position(|a| a == "--settings").unwrap();
+        assert_eq!(fast[si + 1], r#"{"fastMode":true}"#);
+
+        let std_speed =
+            cfg.args_for_with_options("opus", None, None, None, Some("default"), Some("standard"));
+        assert!(!std_speed.iter().any(|a| a == "--effort"));
+        let si = std_speed.iter().position(|a| a == "--settings").unwrap();
+        assert_eq!(std_speed[si + 1], r#"{"fastMode":false}"#);
     }
 }

@@ -100,7 +100,7 @@ checksum = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4"
 
 [[package]]
 name = "kumikit-agents-e2e"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "kumikit-agents-harness",
  "serde_json",
@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "kumikit-agents-harness"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "kumikit-provider-acp",
  "serde_json",
@@ -120,7 +120,7 @@ dependencies = [
 [[package]]
 name = "kumikit-plugin"
 version = "0.1.0"
-source = "git+https://github.com/kumikit/kumikit?rev=0fa256e528058d05b42d4b09bf76b028865370ca#0fa256e528058d05b42d4b09bf76b028865370ca"
+source = "git+https://github.com/kumikit/kumikit?rev=20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3#20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3"
 dependencies = [
  "wasip2",
  "wit-bindgen 0.61.1",
@@ -129,7 +129,7 @@ dependencies = [
 [[package]]
 name = "kumikit-provider"
 version = "0.1.0"
-source = "git+https://github.com/kumikit/kumikit?rev=0fa256e528058d05b42d4b09bf76b028865370ca#0fa256e528058d05b42d4b09bf76b028865370ca"
+source = "git+https://github.com/kumikit/kumikit?rev=20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3#20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3"
 dependencies = [
  "kumikit-plugin",
  "wit-bindgen 0.61.1",
@@ -138,7 +138,7 @@ dependencies = [
 [[package]]
 name = "kumikit-provider-acp"
 version = "0.1.0"
-source = "git+https://github.com/kumikit/kumikit?rev=0fa256e528058d05b42d4b09bf76b028865370ca#0fa256e528058d05b42d4b09bf76b028865370ca"
+source = "git+https://github.com/kumikit/kumikit?rev=20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3#20eee2d731aabb72ab90ab3da8c6ec2047fe0dd3"
 dependencies = [
  "kumikit-provider",
  "serde",
@@ -147,7 +147,7 @@ dependencies = [
 
 [[package]]
 name = "kumikit-provider-claude"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "kumikit-provider",
  "serde",

@@ -16,3 +16,9 @@ Verify it is on your `PATH`:
 ```sh
 copilot --version
 ```
+
+## Icon
+
+`icon.svg` uses the GitHub Copilot mark (from `lobehub/lobe-icons`, `githubcopilot.svg`,
+tinted neutral slate for light and dark themes) to identify the GitHub Copilot CLI
+harness. The mark remains the trademark of GitHub, Inc.

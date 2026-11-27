@@ -180,7 +180,7 @@ impl Core {
         };
         c.call(
             "core.hello",
-            json!({ "protocol": "0.9", "client": { "name": "kumikit-agents-e2e", "version": "0" } }),
+            json!({ "protocol": "0.11", "client": { "name": "kumikit-agents-e2e", "version": "0" } }),
         );
         c
     }
@@ -264,13 +264,21 @@ impl Core {
         );
     }
 
-    /// A provider as published: its manifest and README.
+    /// A provider as published: its manifest, README and icon.
     fn install_provider(&mut self, bins: &Bins, p: &Provider) -> Value {
-        let (manifest, readme) = (p.dir.join("plugin.toml"), p.dir.join("README.md"));
+        let (manifest, readme, icon) = (
+            p.dir.join("plugin.toml"),
+            p.dir.join("README.md"),
+            p.dir.join("icon.svg"),
+        );
         self.install_files(
             bins,
             &p.name,
-            &[("plugin.toml", &manifest), ("README.md", &readme)],
+            &[
+                ("plugin.toml", &manifest),
+                ("README.md", &readme),
+                ("icon.svg", &icon),
+            ],
         )
     }
 
@@ -405,6 +413,20 @@ fn every_provider_installs_and_its_recordings_replay_through_a_real_core() {
                 .is_some_and(|a| !a.is_empty()),
             "{}: no providers in {installed}",
             p.name
+        );
+        let plist = core.call("provider.list", json!({}));
+        let entry = plist["providers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|x| x["plugin"] == installed["id"])
+            .unwrap_or_else(|| panic!("{} missing from provider.list: {plist}", installed["id"]));
+        assert!(
+            entry["icon"]
+                .as_str()
+                .is_some_and(|s| s.starts_with("data:image/svg+xml;base64,")),
+            "{} icon missing or not SVG data URL: {entry}",
+            installed["id"]
         );
 
         let id = format!("test.replay-{}", p.name);
@@ -553,6 +575,7 @@ fn claude_provider_and_deepseek_example_run_end_to_end() {
     let claude_manifest = claude_dir.join("plugin.toml");
     let claude_schema = claude_dir.join("claude.schema.json");
     let claude_readme = claude_dir.join("README.md");
+    let claude_icon = claude_dir.join("icon.svg");
     let installed = core.install_files(
         &bins,
         "provider-claude",
@@ -560,6 +583,7 @@ fn claude_provider_and_deepseek_example_run_end_to_end() {
             ("plugin.toml", &claude_manifest),
             ("claude.schema.json", &claude_schema),
             ("README.md", &claude_readme),
+            ("icon.svg", &claude_icon),
             ("plugin.wasm", &claude_wasm),
         ],
     );
@@ -569,6 +593,19 @@ fn claude_provider_and_deepseek_example_run_end_to_end() {
             .as_array()
             .is_some_and(|a| !a.is_empty()),
         "provider-claude registered no direct provider: {installed}"
+    );
+    let plist_claude = core.call("provider.list", json!({}));
+    let claude_entry = plist_claude["providers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| p["id"] == "kumikit.provider-claude/claude")
+        .unwrap();
+    assert!(
+        claude_entry["icon"]
+            .as_str()
+            .is_some_and(|s| s.starts_with("data:image/svg+xml;base64,")),
+        "provider-claude icon missing: {claude_entry}"
     );
 
     // 2. Pack, install and enable the DeepSeek community example (delegated `claude` backend).
@@ -725,10 +762,31 @@ fn claude_provider_and_deepseek_example_run_end_to_end() {
             .is_some_and(|c| c.iter().any(|x| x == "steer")),
         "provider-claude models must report steer capability: {models}"
     );
+    let model_options = models["models"][0]["options"]
+        .as_array()
+        .expect("provider-claude models must report effort and speed options");
+    assert!(
+        model_options
+            .iter()
+            .any(|o| o["id"] == "effort" && o["kind"] == "effort"),
+        "missing effort option: {models}"
+    );
+    assert!(
+        model_options
+            .iter()
+            .any(|o| o["id"] == "speed" && o["kind"] == "speed"),
+        "missing speed option: {models}"
+    );
     let created = core.call(
         "thread.create",
-        json!({ "workspace": ws, "provider": "test.steer-claude/steer" }),
+        json!({
+            "workspace": ws,
+            "provider": "test.steer-claude/steer",
+            "options": { "effort": "high", "speed": "fast" },
+        }),
     );
+    assert_eq!(created["thread"]["options"]["effort"], "high");
+    assert_eq!(created["thread"]["options"]["speed"], "fast");
     let thread = created["thread"]["id"].as_str().unwrap().to_owned();
     let topic = format!("thread:{thread}");
     core.call("events.subscribe", json!({ "topic": topic, "after": 0 }));
@@ -786,6 +844,7 @@ fn live_claude() {
     let claude_manifest = claude_dir.join("plugin.toml");
     let claude_schema = claude_dir.join("claude.schema.json");
     let claude_readme = claude_dir.join("README.md");
+    let claude_icon = claude_dir.join("icon.svg");
     core.install_files(
         &bins,
         "provider-claude",
@@ -793,6 +852,7 @@ fn live_claude() {
             ("plugin.toml", &claude_manifest),
             ("claude.schema.json", &claude_schema),
             ("README.md", &claude_readme),
+            ("icon.svg", &claude_icon),
             ("plugin.wasm", &claude_wasm),
         ],
     );
