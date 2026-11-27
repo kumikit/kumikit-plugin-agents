@@ -13,3 +13,8 @@ Install Claude Code and sign in:
 ```sh
 claude --version
 ```
+
+## Icon
+
+`icon.svg` uses Anthropic's Claude mark (from `lobehub/lobe-icons`, `claude-color.svg`)
+to identify the Claude Code harness. The mark remains the trademark of Anthropic, PBC.

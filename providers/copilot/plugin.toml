@@ -1,7 +1,7 @@
 # A declarative ACP provider: GitHub Copilot CLI through kumikit.provider-acp, with no code.
 id = "kumikit.provider-copilot"
 name = "GitHub Copilot CLI"
-version = "0.1.1"
+version = "0.1.2"
 description = "GitHub Copilot CLI as a Kumikit provider, over its Agent Client Protocol mode."
 license = "MIT"
 repository = "https://github.com/kumikit/kumikit-plugin-agents"
@@ -14,4 +14,4 @@ spawn = ["copilot"]
 tools = true
 
 [contributes]
-providers = [{ id = "copilot", name = "GitHub Copilot CLI", acp = { command = "copilot", args = ["--acp"] } }]
+providers = [{ id = "copilot", name = "GitHub Copilot CLI", icon = "icon.svg", acp = { command = "copilot", args = ["--acp"] } }]

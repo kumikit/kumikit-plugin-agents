@@ -13,7 +13,8 @@ use std::cell::RefCell;
 
 use kumikit_provider::{
     Child, Decision, Error, ErrorCode, Event, Model, Plugin, Provider, ProviderRef, SessionConfig,
-    SpawnRequest, UserInput, events, process, session as provider_session, steering, take_line,
+    SpawnRequest, UserInput, events, models, process, session as provider_session, steering,
+    take_line,
 };
 
 use crate::config::{Config, McpServerSpec};
@@ -270,10 +271,91 @@ impl Plugin for Claude {
     }
 }
 
+const DEFAULT_EFFORT_LEVELS: &[&str] = &["low", "medium", "high", "xhigh", "max"];
+
+fn effort_option_value(level: &str) -> models::OptionValue {
+    let (label, description) = match level {
+        "low" => ("Low".to_owned(), Some("Fastest responses, light reasoning")),
+        "medium" => ("Medium".to_owned(), Some("Balanced reasoning and speed")),
+        "high" => (
+            "High".to_owned(),
+            Some("Deeper reasoning for complex tasks"),
+        ),
+        "xhigh" => (
+            "Extra high".to_owned(),
+            Some("Extended reasoning for hard tasks"),
+        ),
+        "max" => ("Max".to_owned(), Some("Maximum reasoning effort")),
+        other => {
+            let mut chars = other.chars();
+            let cap = match chars.next() {
+                Some(first) => first.to_uppercase().chain(chars).collect(),
+                None => String::new(),
+            };
+            (cap, None)
+        }
+    };
+    models::OptionValue {
+        value: level.to_owned(),
+        label,
+        description: description.map(str::to_owned),
+    }
+}
+
+/// Builds the Kumikit model settings (`effort`, `speed`) for a Claude Code model.
+pub fn claude_model_options(
+    supports_effort: Option<bool>,
+    supported_levels: &[String],
+    supports_fast_mode: Option<bool>,
+) -> Vec<models::ModelOption> {
+    let mut out = Vec::new();
+    if supports_effort != Some(false) {
+        let values: Vec<models::OptionValue> = if supported_levels.is_empty() {
+            DEFAULT_EFFORT_LEVELS
+                .iter()
+                .map(|l| effort_option_value(l))
+                .collect()
+        } else {
+            supported_levels
+                .iter()
+                .map(|l| effort_option_value(l))
+                .collect()
+        };
+        out.push(models::ModelOption {
+            id: "effort".into(),
+            label: "Effort".into(),
+            kind: Some("effort".into()),
+            values,
+            default: None,
+        });
+    }
+    if supports_fast_mode != Some(false) {
+        out.push(models::ModelOption {
+            id: "speed".into(),
+            label: "Speed".into(),
+            kind: Some("speed".into()),
+            values: vec![
+                models::OptionValue {
+                    value: "standard".into(),
+                    label: "Standard".into(),
+                    description: Some("Normal output speed".into()),
+                },
+                models::OptionValue {
+                    value: "fast".into(),
+                    label: "Fast".into(),
+                    description: Some("Faster output (fast mode)".into()),
+                },
+            ],
+            default: None,
+        });
+    }
+    out
+}
+
 /// Probes Claude Code's `initialize` control response to discover the exact versioned
 /// models available to the local CLI. Returns `None` if `claude` cannot be started or
 /// reports no models, so `list_models` falls back cleanly to static aliases.
-fn probe_models(config: &Config) -> Option<Vec<Model>> {
+fn probe_models(config: &Config) -> Option<Vec<(Model, Vec<models::ModelOption>)>> {
     let mut env: Vec<(String, String)> = config
         .env
         .iter()
@@ -324,10 +406,18 @@ fn probe_models(config: &Config) -> Option<Vec<Model>> {
     Some(
         discovered
             .iter()
-            .map(|m| Model {
-                id: m.id.clone(),
-                label: m.label.clone(),
-                capabilities: caps.clone(),
+            .map(|m| {
+                let model = Model {
+                    id: m.id.clone(),
+                    label: m.label.clone(),
+                    capabilities: caps.clone(),
+                };
+                let opts = claude_model_options(
+                    m.supports_effort,
+                    &m.supported_effort_levels,
+                    m.supports_fast_mode,
+                );
+                (model, opts)
             })
             .collect(),
     )
@@ -347,18 +437,27 @@ impl Provider for Claude {
                 })
                 .collect());
         }
-        if let Some(models) = probe_models(&cfg) {
-            return Ok(models);
+        if let Some(probed) = probe_models(&cfg) {
+            let mut out = Vec::with_capacity(probed.len());
+            for (model, opts) in probed {
+                if !opts.is_empty() {
+                    models::set_options(&model.id, &opts)?;
+                }
+                out.push(model);
+            }
+            return Ok(out);
         }
-        Ok(cfg
-            .models()
-            .into_iter()
-            .map(|m| Model {
+        let fallback_opts = claude_model_options(None, &[], None);
+        let mut out = Vec::new();
+        for m in cfg.models() {
+            models::set_options(&m.id, &fallback_opts)?;
+            out.push(Model {
                 id: m.id,
                 label: m.label,
                 capabilities: m.capabilities,
-            })
-            .collect())
+            });
+        }
+        Ok(out)
     }
 
     fn start_session(provider: ProviderRef, cfg: SessionConfig) -> Result<String, Error> {
@@ -374,13 +473,17 @@ impl Provider for Claude {
             .iter()
             .find(|(k, _)| k == "permission-mode")
             .map(|(_, v)| v.as_str());
+        let effort = models::chosen(&cfg.options, "effort");
+        let speed = models::chosen(&cfg.options, "speed");
         let child = process::spawn(&SpawnRequest {
             program: config.command.clone(),
-            args: config.args_for_with_mode(
+            args: config.args_for_with_options(
                 &cfg.model,
                 cfg.resume.as_deref(),
                 mcp.as_ref(),
                 permission_mode,
+                effort,
+                speed,
             ),
             cwd: None,
             env: config.env.clone().into_iter().collect(),
@@ -423,3 +526,30 @@ impl Provider for Claude {
 }
 
 kumikit_provider::export_provider!(Claude);
+
+#[cfg(test)]
+mod tests {
+    use super::claude_model_options;
+
+    #[test]
+    fn claude_options_default_to_effort_and_speed_and_respect_flags() {
+        let opts = claude_model_options(None, &[], None);
+        assert_eq!(opts.len(), 2);
+        assert_eq!(opts[0].id, "effort");
+        assert_eq!(opts[0].kind.as_deref(), Some("effort"));
+        let effort_vals: Vec<&str> = opts[0].values.iter().map(|v| v.value.as_str()).collect();
+        assert_eq!(effort_vals, ["low", "medium", "high", "xhigh", "max"]);
+        assert_eq!(opts[1].id, "speed");
+        assert_eq!(opts[1].kind.as_deref(), Some("speed"));
+        let speed_vals: Vec<&str> = opts[1].values.iter().map(|v| v.value.as_str()).collect();
+        assert_eq!(speed_vals, ["standard", "fast"]);
+
+        let custom = claude_model_options(Some(true), &["low".into(), "high".into()], Some(false));
+        assert_eq!(custom.len(), 1);
+        assert_eq!(custom[0].id, "effort");
+        assert_eq!(custom[0].values.len(), 2);
+
+        let none = claude_model_options(Some(false), &[], Some(false));
+        assert!(none.is_empty());
+    }
+}

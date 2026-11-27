@@ -141,6 +141,12 @@ pub struct DiscoveredModel {
     pub id: String,
     /// Human-readable display label (including version when reported).
     pub label: String,
+    /// Whether Claude Code explicitly reported effort support (`supportsEffort`).
+    pub supports_effort: Option<bool>,
+    /// Effort levels advertised by Claude Code (`supportedEffortLevels`), if any.
+    pub supported_effort_levels: Vec<String>,
+    /// Whether Claude Code explicitly reported fast-mode support (`supportsFastMode`).
+    pub supports_fast_mode: Option<bool>,
 }
 
 /// A file or image attachment provided alongside a user prompt.
@@ -253,9 +259,22 @@ pub fn extract_models(response: &Value) -> Vec<DiscoveredModel> {
             item["description"].as_str(),
             item["resolvedModel"].as_str(),
         );
+        let supports_effort = item["supportsEffort"].as_bool();
+        let supported_effort_levels = item["supportedEffortLevels"]
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().filter(|s| !s.is_empty()).map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let supports_fast_mode = item["supportsFastMode"].as_bool();
         out.push(DiscoveredModel {
             id: id.to_owned(),
             label,
+            supports_effort,
+            supported_effort_levels,
+            supports_fast_mode,
         });
     }
     if let Some(pos) = out.iter().position(|m| m.id == "default")
@@ -1042,7 +1061,7 @@ mod tests {
         let mut s = Session::new(Options::default());
         s.start();
         let ready = s.on_line(
-            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{"models":[{"value":"default","resolvedModel":"claude-opus-5-5","displayName":"Default (recommended)","description":"Opus 5.5 · Best for everyday, complex tasks"},{"value":"opus","resolvedModel":"claude-opus-5-5","displayName":"Opus","description":"Opus 5.5 · Best for everyday, complex tasks"},{"value":"claude-fable-5-2[1m]","resolvedModel":"claude-fable-5-2","displayName":"Fable","description":"Fable 5.2 · Most capable"},{"value":"sonnet","resolvedModel":"claude-sonnet-5-5","displayName":"Sonnet","description":"Sonnet 5.5 · Efficient"},{"value":"haiku","resolvedModel":"claude-haiku-5-5","displayName":"Haiku","description":"Haiku 5.5 · Fastest"}]}}}"#,
+            r#"{"type":"control_response","response":{"subtype":"success","request_id":"req-1","response":{"models":[{"value":"default","resolvedModel":"claude-opus-5-5","displayName":"Default (recommended)","description":"Opus 5.5 · Best for everyday, complex tasks","supportsEffort":true,"supportedEffortLevels":["low","medium","high","max"],"supportsFastMode":true},{"value":"opus","resolvedModel":"claude-opus-5-5","displayName":"Opus","description":"Opus 5.5 · Best for everyday, complex tasks"},{"value":"claude-fable-5-2[1m]","resolvedModel":"claude-fable-5-2","displayName":"Fable","description":"Fable 5.2 · Most capable"},{"value":"sonnet","resolvedModel":"claude-sonnet-5-5","displayName":"Sonnet","description":"Sonnet 5.5 · Efficient"},{"value":"haiku","resolvedModel":"claude-haiku-5-5","displayName":"Haiku","description":"Haiku 5.5 · Fastest","supportsEffort":false,"supportsFastMode":false}]}}}"#,
         );
         assert!(matches!(ready.as_slice(), [Action::Ready { .. }]));
         assert_eq!(
@@ -1050,23 +1069,43 @@ mod tests {
             &[
                 DiscoveredModel {
                     id: "default".into(),
-                    label: "Default (Opus 5.5)".into()
+                    label: "Default (Opus 5.5)".into(),
+                    supports_effort: Some(true),
+                    supported_effort_levels: vec![
+                        "low".into(),
+                        "medium".into(),
+                        "high".into(),
+                        "max".into(),
+                    ],
+                    supports_fast_mode: Some(true),
                 },
                 DiscoveredModel {
                     id: "opus".into(),
-                    label: "Claude Opus 5.5".into()
+                    label: "Claude Opus 5.5".into(),
+                    supports_effort: None,
+                    supported_effort_levels: Vec::new(),
+                    supports_fast_mode: None,
                 },
                 DiscoveredModel {
                     id: "claude-fable-5-2[1m]".into(),
-                    label: "Claude Fable 5.2".into()
+                    label: "Claude Fable 5.2".into(),
+                    supports_effort: None,
+                    supported_effort_levels: Vec::new(),
+                    supports_fast_mode: None,
                 },
                 DiscoveredModel {
                     id: "sonnet".into(),
-                    label: "Claude Sonnet 5.5".into()
+                    label: "Claude Sonnet 5.5".into(),
+                    supports_effort: None,
+                    supported_effort_levels: Vec::new(),
+                    supports_fast_mode: None,
                 },
                 DiscoveredModel {
                     id: "haiku".into(),
-                    label: "Claude Haiku 5.5".into()
+                    label: "Claude Haiku 5.5".into(),
+                    supports_effort: Some(false),
+                    supported_effort_levels: Vec::new(),
+                    supports_fast_mode: Some(false),
                 },
             ]
         );

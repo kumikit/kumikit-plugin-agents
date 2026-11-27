@@ -1,7 +1,7 @@
 # Claude Code WASM adapter and `claude` provider backend (`docs/spec/05-providers.md`).
 id = "kumikit.provider-claude"
 name = "Claude Code"
-version = "0.1.2"
+version = "0.1.3"
 description = "Claude Code over its native stream-json stdio protocol, and the `claude` backend for Anthropic-compatible endpoints."
 license = "MIT"
 repository = "https://github.com/kumikit/kumikit-plugin-agents"
@@ -18,5 +18,5 @@ spawn = ["claude"]
 tools = true
 
 [contributes]
-providers = [{ id = "claude", name = "Claude Code" }]
+providers = [{ id = "claude", name = "Claude Code", icon = "icon.svg" }]
 provider-backends = [{ key = "claude", schema = "claude.schema.json" }]

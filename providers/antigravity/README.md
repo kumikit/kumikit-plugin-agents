@@ -16,3 +16,9 @@ Verify it is on your `PATH`:
 ```sh
 agy --version
 ```
+
+## Icon
+
+`icon.svg` uses Google's Antigravity mark (from `lobehub/lobe-icons`,
+`antigravity-color.svg`) to identify the Antigravity CLI harness. The mark remains the
+trademark of Google LLC.
